@@ -208,234 +208,7 @@ export default function App() {
     </div>
   );
 }
-
-// ============================================================
-//  CHROME
-// ============================================================
-function Splash() {
-  return (
-    <div style={{ background: C.bg, color: C.muted, height: "100vh",
-      display: "grid", placeItems: "center",
-      fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <div style={{ textAlign: "center" }}>
-        <Wordmark />
-        <div style={{ marginTop: 16, fontSize: 13, letterSpacing: 1 }}>carregando…</div>
-      </div>
-    </div>
-  );
-}
-
-function Wordmark() {
-  return (
-    <div style={{ fontStyle: "italic", fontWeight: 900, fontSize: 26, letterSpacing: -0.5 }}>
-      <span style={{ color: C.text }}>FUN</span>
-      <span style={{ color: C.orange }}>PARTS</span>
-    </div>
-  );
-}
-
-function Header({ storageMode, syncing, onSync }) {
-  const connected = storageMode === "firebase";
-  return (
-    <header style={{ borderBottom: `1px solid ${C.border}`, background: C.bg,
-      position: "sticky", top: 0, zIndex: 30 }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "14px 16px",
-        display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 4, height: 26, background: C.orange,
-            transform: "skewX(-12deg)" }} />
-          <Wordmark />
-          <span style={{ color: C.muted, fontSize: 11, fontWeight: 600,
-            letterSpacing: 2, textTransform: "uppercase", marginTop: 4 }}>
-            Consignação
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {storageMode && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6,
-              fontSize: 12, color: connected ? C.green : C.muted }}>
-              {connected
-                ? <Wifi size={13} color={C.green} />
-                : <WifiOff size={13} color={C.muted} />}
-              {connected ? "Firebase ativo" : "Modo local"}
-            </div>
-          )}
-          <button onClick={onSync}
-            style={{ display: "flex", alignItems: "center", gap: 7,
-              background: C.surface2, border: `1px solid ${C.border}`,
-              borderRadius: 9, color: C.muted, padding: "8px 12px",
-              fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
-            <RefreshCw size={14} color={C.blue}
-              style={{ animation: syncing ? "spin 1s linear infinite" : "none" }} />
-            {syncing ? "Sincronizando…" : "Sincronizar"}
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function LocalBanner() {
-  return (
-    <div style={{ background: `${C.orange}14`, borderBottom: `1px solid ${C.orange}40` }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "9px 16px",
-        display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: C.text }}>
-        <AlertTriangle size={15} color={C.orange} style={{ flexShrink: 0 }} />
-        <span>
-          <b>Modo local:</b> Firebase não configurado — dados ficam só neste
-          navegador. Siga o README para conectar o Firebase e sincronizar com as vendedoras.
-        </span>
-      </div>
-    </div>
-  );
-}
-
-const NAV = [
-  ["painel",   "Painel",         LayoutGrid],
-  ["vender",   "Vender",         ShoppingBag],
-  ["enviar",   "Enviar",         Truck],
-  ["pdv",      "Pontos de venda",Store],
-  ["catalogo", "Catálogo",       Package],
-  ["vendas",   "Vendas / NF",    FileText],
-];
-
-function Nav({ tab, setTab }) {
-  return (
-    <nav style={{ borderBottom: `1px solid ${C.border}`, background: C.surface,
-      position: "sticky", top: 57, zIndex: 25, overflowX: "auto" }} className="no-sb">
-      <div style={{ maxWidth: 1080, margin: "0 auto",
-        display: "flex", gap: 2, padding: "0 8px" }}>
-        {NAV.map(([id, label, Icon]) => {
-          const active = tab === id;
-          const sell   = id === "vender";
-          return (
-            <button key={id} onClick={() => setTab(id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 7,
-                whiteSpace: "nowrap", padding: "13px 14px",
-                border: "none", background: "transparent", cursor: "pointer",
-                fontSize: 13.5, fontWeight: active ? 700 : 500,
-                color: active ? C.text : C.muted,
-                borderBottom: `2px solid ${active ? (sell ? C.orange : C.blue) : "transparent"}`,
-              }}>
-              <Icon size={16} color={active ? (sell ? C.orange : C.blue) : C.muted} />
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
-}
-
-function Toast({ toast }) {
-  const col = toast.kind === "warn" ? C.orange
-            : toast.kind === "err"  ? C.red
-            : C.green;
-  return (
-    <div style={{ position: "fixed", bottom: 22, left: "50%",
-      transform: "translateX(-50%)", background: C.surface2,
-      border: `1px solid ${col}`, color: C.text, padding: "11px 18px",
-      borderRadius: 10, fontSize: 14, fontWeight: 600,
-      boxShadow: "0 10px 30px rgba(0,0,0,.5)", zIndex: 60,
-      display: "flex", alignItems: "center", gap: 9 }}>
-      <span style={{ width: 7, height: 7, borderRadius: 99, background: col }} />
-      {toast.msg}
-    </div>
-  );
-}
-
-// ---------- primitives ----------
-function SectionTitle({ children, sub }) {
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <h2 style={{ margin: 0, fontStyle: "italic", fontWeight: 900, fontSize: 22,
-        letterSpacing: -0.5, textTransform: "uppercase" }}>{children}</h2>
-      {sub && <p style={{ margin: "4px 0 0", color: C.muted, fontSize: 13.5 }}>{sub}</p>}
-    </div>
-  );
-}
-function Card({ children, style }) {
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`,
-      borderRadius: 14, padding: 18, ...style }}>{children}</div>
-  );
-}
-function Field({ label, children, req }) {
-  return (
-    <label style={{ display: "block", marginBottom: 13 }}>
-      <span style={{ display: "block", fontSize: 12, fontWeight: 600,
-        color: C.muted, marginBottom: 6, letterSpacing: 0.3 }}>
-        {label}{req && <span style={{ color: C.orange }}> *</span>}
-      </span>
-      {children}
-    </label>
-  );
-}
-const inputStyle = {
-  width: "100%", boxSizing: "border-box", background: C.bg,
-  border: `1px solid ${C.border}`, borderRadius: 9, color: C.text,
-  padding: "11px 12px", fontSize: 15, outline: "none",
-};
-function Input(props) {
-  return (
-    <input {...props}
-      style={{ ...inputStyle, ...(props.style || {}) }}
-      onFocus={(e) => (e.target.style.borderColor = C.blue)}
-      onBlur={(e)  => (e.target.style.borderColor = C.border)} />
-  );
-}
-function Sel({ children, ...p }) {
-  return (
-    <select {...p} style={{ ...inputStyle, appearance: "none" }}>
-      {children}
-    </select>
-  );
-}
-function Btn({ children, onClick, kind = "primary", disabled, full, type = "button" }) {
-  const bg  = kind === "primary" ? C.orange : kind === "blue" ? C.blue : "transparent";
-  const col = kind === "ghost"   ? C.muted  : "#0B0C0E";
-  return (
-    <button type={type} onClick={onClick} disabled={disabled}
-      style={{
-        background: disabled ? C.border : bg,
-        color: disabled ? C.muted : col,
-        border: kind === "ghost" ? `1px solid ${C.border}` : "none",
-        padding: "11px 18px", borderRadius: 9, fontWeight: 700, fontSize: 14,
-        cursor: disabled ? "not-allowed" : "pointer",
-        width: full ? "100%" : "auto",
-        display: "inline-flex", alignItems: "center",
-        justifyContent: "center", gap: 8,
-      }}>
-      {children}
-    </button>
-  );
-}
-function Empty({ icon: Icon, title, hint, action }) {
-  return (
-    <Card style={{ textAlign: "center", padding: "40px 20px" }}>
-      <Icon size={34} color={C.border} />
-      <div style={{ fontWeight: 700, fontSize: 16, marginTop: 12 }}>{title}</div>
-      {hint && <div style={{ color: C.muted, fontSize: 13.5, marginTop: 6 }}>{hint}</div>}
-      {action && <div style={{ marginTop: 16 }}>{action}</div>}
-    </Card>
-  );
-}
-function IconBtn({ children, onClick, title, danger }) {
-  return (
-    <button onClick={onClick} title={title}
-      style={{ width: 32, height: 32, borderRadius: 8,
-        border: `1px solid ${C.border}`, background: C.bg,
-        color: danger ? C.red : C.muted, cursor: "pointer",
-        display: "grid", placeItems: "center" }}>
-      {children}
-    </button>
-  );
-}
-function Modal({ title, children, onClose }) {
-  return (
-    <div onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.65)",
+ style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.65)",
         display: "grid", placeItems: "center", zIndex: 50, padding: 16 }}>
       <div onClick={(e) => e.stopPropagation()}
         style={{ background: C.surface, border: `1px solid ${C.border}`,
@@ -757,38 +530,7 @@ function PdvDetalhe({ pdv, estoqueDe, onBack, onEdit, onRemove }) {
   );
 }
 
-// ============================================================
-//  PONTOS DE VENDA
-// ============================================================
-function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
-  const [form, setForm] = useState(null);
-  const [selectedPdv, setSelectedPdv] = useState(null);
-  const blank = { nome: "", local: "", responsavel: "", contato: "" };
-
-  // Se tiver PDV selecionado, mostra o detalhe
-  if (selectedPdv) {
-    // garante dados frescos caso o pdv tenha sido editado
-    const pdvAtual = pdvs.find((p) => p.id === selectedPdv.id) || selectedPdv;
-    return (
-      <>
-        {form && (
-          <Modal title="Editar ponto de venda" onClose={() => setForm(null)}>
-            <Field label="Nome da loja" req>
-              <Input value={form.nome} placeholder="Men's House"
-                onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-            </Field>
-            <Field label="Local / shopping">
-              <Input value={form.local} placeholder="Shopping Cidade Jardim"
-                onChange={(e) => setForm({ ...form, local: e.target.value })} />
-            </Field>
-            <Field label="Responsável / vendedora">
-              <Input value={form.responsavel}
-                onChange={(e) => setForm({ ...form, responsavel: e.target.value })} />
-            </Field>
-            <Field label="Contato (WhatsApp / e-mail)">
-              <Input value={form.contato}
-                onChange={(e) => setForm({ ...form, contato: e.target.value })} />
-            </Field>
+                      </Field>
             <Btn full disabled={!form.nome.trim()}
               onClick={async () => { await onSave(form); setForm(null); }}>
               Salvar
@@ -854,9 +596,7 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
               const linhas = estoqueDe(p.id);
               const un = linhas.reduce((s, l) => s + l.qtd, 0);
               return (
-                <Card key={p.id}
-                  onClick={() => setSelectedPdv(p)}
-                  style={{ cursor: "pointer", transition: "border-color 0.15s" }}
+                <Card key={p.id} style={{ transition: "border-color 0.15s" }}
                   onMouseEnter={(e) => e.currentTarget.style.borderColor = C.orange}
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = C.border}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -867,8 +607,7 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
                         <div style={{ color: C.muted, fontSize: 13 }}>{p.local || "—"}</div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}
-                      onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: "flex", gap: 6 }}>
                       <IconBtn onClick={() => setForm(p)} title="Editar"><User size={14} /></IconBtn>
                       <IconBtn onClick={() => onRemove(p.id)} title="Remover" danger>
                         <Trash2 size={14} />
@@ -884,9 +623,19 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
                     </span>
                     <span style={{ fontWeight: 700,
                       color: un ? C.blue : C.muted, fontVariantNumeric: "tabular-nums" }}>
-                      {un} em estoque →
+                      {un} em estoque
                     </span>
                   </div>
+                  <button onClick={() => setSelectedPdv(p)}
+                    style={{ marginTop: 12, width: "100%", padding: "10px 0",
+                      background: C.orange, color: "#fff", border: "none",
+                      borderRadius: 8, fontWeight: 700, fontSize: 13,
+                      letterSpacing: "0.05em", cursor: "pointer",
+                      transition: "opacity 0.15s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+                    GERENCIAR ESTOQUE
+                  </button>
                 </Card>
               );
             })}
@@ -1163,13 +912,4 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
             <div style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <Field label="CPF" req>
-                  <Input value={cli.cpf} inputMode="numeric" placeholder="000.000.000-00"
-                    onChange={(e) => setCli({ ...cli, cpf: maskCPF(e.target.value) })} />
-                </Field>
-              </div>
-              <div style={{ flex: 1 }}>
-                <Field label="Telefone">
-                  <Input value={cli.telefone} inputMode="numeric"
-                    placeholder="(11) 90000-0000"
-                    onChange={(e) =>
-                      setCli({ ...cli, tele
+                  <Input va
