@@ -146,7 +146,7 @@ export default function App() {
     const obj = { id: uid(), ...mv };
     setMovs((prev) => byData([obj, ...prev]));
     await put(PFX.mov + obj.id, obj);
-    flash(mv.tipo === "entrada" ? "Envio registrado" : "Venda registrada");
+    flash(mv.tipo === "entrada" ? "Envio registrado" : mv.tipo === "saida" ? "Transferência registrada" : "Venda registrada");
   };
   const removeMov = async (id) => {
     setMovs((prev) => prev.filter((x) => x.id !== id));
@@ -193,7 +193,7 @@ export default function App() {
         {tab === "painel"   && <Painel pdvs={pdvs} produtos={produtos} movs={movs}
                                 estoqueDe={estoqueDe} setTab={setTab} />}
         {tab === "pdv"      && <PdvView pdvs={pdvs} onSave={savePdv}
-                                onRemove={removePdv} estoqueDe={estoqueDe} />}
+                                onRemove={removePdv} estoqueDe={estoqueDe} onAddMov={addMov} />}
         {tab === "catalogo" && <CatalogoView produtos={produtos}
                                 onSave={saveProduto} onRemove={removeProduto} />}
         {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos}
@@ -612,7 +612,7 @@ function Stat({ label, value, foot, accent }) {
 // ============================================================
 //  PONTOS DE VENDA
 // ============================================================
-function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
+function PdvView({ pdvs, onSave, onRemove, estoqueDe, onAddMov }) {
   const [form, setForm] = useState(null);
   const [selectedPdv, setSelectedPdv] = useState(null);
   const blank = { nome: "", local: "", responsavel: "", contato: "" };
@@ -708,7 +708,7 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
       }
     
   {selectedPdv && (
-    <PdvDetalhe pdv={selectedPdv} estoqueDe={estoqueDe} onClose={() => setSelectedPdv(null)} />
+    <PdvDetalhe pdv={selectedPdv} pdvs={pdvs} estoqueDe={estoqueDe} onAddMov={onAddMov} onClose={() => setSelectedPdv(null)} />
   )}
   </>
   );
@@ -720,45 +720,97 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
 // ============================================================
 // PDV DETALHE
 // ============================================================
-function PdvDetalhe({ pdv, estoqueDe, onClose }) {
+function PdvDetalhe({ pdv, pdvs, estoqueDe, onAddMov, onClose }) {
+  const [transfer, setTransfer] = useState(null);
   const linhas = estoqueDe(pdv.id);
   const total = linhas.reduce((s, l) => s + l.qtd, 0);
   const valor = linhas.reduce((s, l) => s + l.qtd * (Number(l.produto.preco) || 0), 0);
+  const otherPdvs = (pdvs || []).filter(p => p.id !== pdv.id);
+
+  const doTransfer = async () => {
+    if (!transfer?.destId || transfer.qty < 1) return;
+    const { produtoId, qty, destId } = transfer;
+    const dt = today();
+    await onAddMov({ tipo: "saida", pdvId: pdv.id, produtoId, qtd: qty, data: dt });
+    await onAddMov({ tipo: "entrada", pdvId: destId, produtoId, qtd: qty, data: dt });
+    setTransfer(null);
+  };
+
   return (
     <Modal title={`Estoque — ${pdv.nome}`} onClose={onClose}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between",
         fontSize: 13, color: C.muted }}>
         <span>{pdv.local || "—"}</span>
-        <span>
-          <b style={{ color: C.text }}>{total}</b> quadros ·{" "}
-          <b style={{ color: C.blue }}>{brl(valor)}</b>
-        </span>
+        <span><b style={{ color: C.text }}>{total}</b> quadros ·{" "}
+          <b style={{ color: C.blue }}>{brl(valor)}</b></span>
       </div>
       {linhas.length === 0
         ? <p style={{ color: C.muted, textAlign: "center", padding: "24px 0" }}>Sem estoque neste PDV.</p>
-        : linhas.map(({ produto, qtd }) => (
-          <div key={produto.id} style={{ display: "flex", justifyContent: "space-between",
-            alignItems: "center", padding: "11px 0",
-            borderBottom: `1px solid ${C.border}` }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14.5 }}>{produto.nome}</div>
-              <div style={{ color: C.muted, fontSize: 12.5 }}>{brl(produto.preco)} cada</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 700, fontSize: 16, color: C.orange,
-                fontVariantNumeric: "tabular-nums" }}>{qtd}</span>
-              <div style={{ color: C.blue, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
-                {brl(qtd * (Number(produto.preco)||0))}
+        : linhas.map(({ produto, qtd }) => {
+          const isT = transfer?.produtoId === produto.id;
+          return (
+            <div key={produto.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between",
+                alignItems: "center", padding: "11px 0" }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{produto.nome}</div>
+                  <div style={{ color: C.muted, fontSize: 12.5 }}>{brl(produto.preco)} cada</div>
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: C.orange,
+                      fontVariantNumeric: "tabular-nums" }}>{qtd}</div>
+                    <div style={{ color: C.blue, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+                      {brl(qtd * (Number(produto.preco) || 0))}
+                    </div>
+                  </div>
+                  <button onClick={() => setTransfer(isT ? null : { produtoId: produto.id, qty: 1, destId: "" })}
+                    title="Transferir para outro PDV"
+                    style={{ width: 32, height: 32, borderRadius: 8,
+                      border: `1px solid ${isT ? C.orange : C.border}`,
+                      background: isT ? C.orange + "22" : C.bg,
+                      color: isT ? C.orange : C.muted,
+                      cursor: "pointer", display: "grid", placeItems: "center",
+                      transition: "all 0.15s" }}>
+                    <Truck size={14} />
+                  </button>
+                </div>
               </div>
+              {isT && (
+                <div style={{ paddingBottom: 14, display: "flex", gap: 8, alignItems: "center",
+                  flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                  <select value={transfer.destId}
+                    onChange={(e) => setTransfer({ ...transfer, destId: e.target.value })}
+                    style={{ flex: 1, minWidth: 130, ...inputStyle,
+                      fontSize: 13, padding: "8px 10px", appearance: "none" }}>
+                    <option value="">→ Destino…</option>
+                    {otherPdvs.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                  </select>
+                  <input type="number" min={1} max={qtd} value={transfer.qty}
+                    onChange={(e) => setTransfer({ ...transfer,
+                      qty: Math.min(qtd, Math.max(1, parseInt(e.target.value) || 1)) })}
+                    style={{ width: 60, ...inputStyle, fontSize: 14,
+                      padding: "8px 10px", textAlign: "center" }} />
+                  <button onClick={doTransfer} disabled={!transfer.destId}
+                    style={{ padding: "8px 18px", borderRadius: 8, border: "none",
+                      background: transfer.destId ? C.orange : C.border,
+                      color: transfer.destId ? "#fff" : C.muted,
+                      fontWeight: 700, fontSize: 13,
+                      cursor: transfer.destId ? "pointer" : "not-allowed",
+                      transition: "opacity 0.15s" }}>
+                    Transferir
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        ))
+          );
+        })
       }
     </Modal>
   );
 }
 
-// ============================================================
+
 function CatalogoView({ produtos, onSave, onRemove }) {
   const [form, setForm] = useState(null);
   const blank = { nome: "", modelo: "", preco: "", qtd: "" };
