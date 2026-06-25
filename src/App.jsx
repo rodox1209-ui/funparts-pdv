@@ -1016,14 +1016,19 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
               borderRadius: 10, padding: "10px 14px", marginBottom: 16,
               display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13.5, color: C.muted }}>{prod?.nome}</span>
-              {Number(p.qtd) > 0 && (
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.blue,
-                  fontVariantNumeric: "tabular-nums", background: C.surface2,
-                  borderRadius: 6, padding: "3px 8px",
-                  border: `1px solid ${C.border}` }}>
-                  {p.qtd} un
-                </span>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 5,
+                background: C.surface2, border: `1px solid ${C.border}`,
+                borderRadius: 8, padding: "5px 10px", minWidth: 76 }}>
+                <span style={{ color: C.muted, fontSize: 11, fontWeight: 600,
+                  letterSpacing: 0.5, textTransform: "uppercase" }}>Qtd</span>
+                <input type="number" min={0}
+                  defaultValue={p.qtd || 0}
+                  onBlur={(e) => onSave({ ...p, qtd: Number(e.target.value) })}
+                  style={{ width: 38, background: "transparent", border: "none",
+                    color: C.blue, fontSize: 15, fontWeight: 800,
+                    textAlign: "center", outline: "none", cursor: "text",
+                    fontVariantNumeric: "tabular-nums" }} />
+              </div>
               <span style={{ fontWeight: 700, color: C.orange }}>{brl(prod?.preco)}</span>
             </div>
 
