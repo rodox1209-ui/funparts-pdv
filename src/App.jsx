@@ -761,7 +761,7 @@ function PdvDetalhe({ pdv, estoqueDe, onClose }) {
 // ============================================================
 function CatalogoView({ produtos, onSave, onRemove }) {
   const [form, setForm] = useState(null);
-  const blank = { nome: "", modelo: "", preco: "" };
+  const blank = { nome: "", modelo: "", preco: "", qtd: "" };
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between",
@@ -787,6 +787,10 @@ function CatalogoView({ produtos, onSave, onRemove }) {
             <Input type="number" value={form.preco} placeholder="1490"
               onChange={(e) => setForm({ ...form, preco: e.target.value })} />
           </Field>
+        <Field label="Qtd. em mãos">
+          <Input type="number" min={0} value={form.qtd || ""} placeholder="0"
+            onChange={(e) => setForm({ ...form, qtd: e.target.value })} />
+        </Field>
           <Btn full disabled={!form.nome.trim() || !form.preco}
             onClick={async () => { await onSave(form); setForm(null); }}>
             Salvar
@@ -1012,6 +1016,14 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
               borderRadius: 10, padding: "10px 14px", marginBottom: 16,
               display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13.5, color: C.muted }}>{prod?.nome}</span>
+              {Number(p.qtd) > 0 && (
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.blue,
+                  fontVariantNumeric: "tabular-nums", background: C.surface2,
+                  borderRadius: 6, padding: "3px 8px",
+                  border: `1px solid ${C.border}` }}>
+                  {p.qtd} un
+                </span>
+              )}
               <span style={{ fontWeight: 700, color: C.orange }}>{brl(prod?.preco)}</span>
             </div>
 
