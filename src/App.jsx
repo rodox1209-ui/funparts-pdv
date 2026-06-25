@@ -610,11 +610,201 @@ function Stat({ label, value, foot, accent }) {
 }
 
 // ============================================================
+//  PONTOS DE VENDA — DETALHE
+// ============================================================
+function PdvDetalhe({ pdv, estoqueDe, onBack, onEdit, onRemove }) {
+  const linhas = estoqueDe(pdv.id);
+  const totalUn = linhas.reduce((s, l) => s + l.qtd, 0);
+  const totalVal = linhas.reduce((s, l) => s + l.qtd * (l.produto.preco || 0), 0);
+
+  return (
+    <>
+      {/* breadcrumb / voltar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <button
+          onClick={onBack}
+          style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 8,
+            color: C.muted, cursor: "pointer", padding: "6px 12px", fontSize: 13,
+            display: "flex", alignItems: "center", gap: 6 }}>
+          ← Pontos de venda
+        </button>
+        <span style={{ color: C.muted, fontSize: 13 }}>/</span>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{pdv.nome}</span>
+      </div>
+
+      {/* cabeçalho do PDV */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: C.bg,
+              border: `1px solid ${C.border}`, display: "grid", placeItems: "center" }}>
+              <Store size={22} color={C.orange} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 18 }}>{pdv.nome}</div>
+              <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>
+                {pdv.local || "—"}
+              </div>
+              {pdv.responsavel && (
+                <div style={{ color: C.muted, fontSize: 12.5, marginTop: 3 }}>
+                  <span style={{ color: C.blue }}>●</span> {pdv.responsavel}
+                  {pdv.contato ? ` · ${pdv.contato}` : ""}
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <IconBtn onClick={onEdit} title="Editar PDV"><User size={14} /></IconBtn>
+            <IconBtn onClick={onRemove} title="Remover PDV" danger><Trash2 size={14} /></IconBtn>
+          </div>
+        </div>
+
+        {/* métricas rápidas */}
+        <div style={{ display: "flex", gap: 16, marginTop: 16, paddingTop: 16,
+          borderTop: `1px solid ${C.border}` }}>
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.blue,
+              fontVariantNumeric: "tabular-nums" }}>{totalUn}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>UNIDADES</div>
+          </div>
+          <div style={{ width: 1, background: C.border }} />
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.orange,
+              fontVariantNumeric: "tabular-nums" }}>{linhas.length}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>MODELOS</div>
+          </div>
+          <div style={{ width: 1, background: C.border }} />
+          <div style={{ textAlign: "center", flex: 2 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.green,
+              fontVariantNumeric: "tabular-nums" }}>{brl(totalVal)}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>VALOR EM ESTOQUE</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* lista de produtos em estoque */}
+      <SectionTitle sub={`Quadros atualmente em consignação em ${pdv.nome}`}>
+        Estoque atual
+      </SectionTitle>
+
+      {linhas.length === 0 ? (
+        <Empty icon={Boxes} title="Nenhum quadro em estoque"
+          hint="Envie quadros para este ponto de venda na aba Enviar." />
+      ) : (
+        <Card style={{ padding: 0, overflow: "hidden" }}>
+          {/* cabeçalho da tabela */}
+          <div style={{ display: "grid",
+            gridTemplateColumns: "1fr auto auto auto",
+            gap: 8, padding: "10px 16px",
+            background: C.bg,
+            borderBottom: `1px solid ${C.border}`,
+            fontSize: 11, fontWeight: 700, color: C.muted,
+            letterSpacing: 0.5, textTransform: "uppercase" }}>
+            <span>Quadro</span>
+            <span style={{ textAlign: "center", minWidth: 60 }}>Qtd</span>
+            <span style={{ textAlign: "right", minWidth: 90 }}>Preço unit.</span>
+            <span style={{ textAlign: "right", minWidth: 100 }}>Total</span>
+          </div>
+
+          {linhas.map(({ produto: pr, qtd }, i) => (
+            <div key={pr.id}
+              style={{ display: "grid",
+                gridTemplateColumns: "1fr auto auto auto",
+                gap: 8, padding: "14px 16px", alignItems: "center",
+                borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{pr.nome}</div>
+                {pr.modelo && (
+                  <div style={{ color: C.muted, fontSize: 12, marginTop: 1 }}>{pr.modelo}</div>
+                )}
+              </div>
+              <div style={{ textAlign: "center", minWidth: 60 }}>
+                <span style={{ background: C.surface2, border: `1px solid ${C.border}`,
+                  borderRadius: 6, padding: "3px 10px", fontWeight: 700,
+                  fontSize: 14, color: C.blue, fontVariantNumeric: "tabular-nums" }}>
+                  {qtd}
+                </span>
+              </div>
+              <div style={{ textAlign: "right", minWidth: 90, color: C.muted, fontSize: 13,
+                fontVariantNumeric: "tabular-nums" }}>
+                {brl(pr.preco)}
+              </div>
+              <div style={{ textAlign: "right", minWidth: 100, fontWeight: 700,
+                color: C.orange, fontVariantNumeric: "tabular-nums" }}>
+                {brl(qtd * (pr.preco || 0))}
+              </div>
+            </div>
+          ))}
+
+          {/* rodapé total */}
+          <div style={{ display: "grid",
+            gridTemplateColumns: "1fr auto auto auto",
+            gap: 8, padding: "12px 16px",
+            borderTop: `2px solid ${C.border}`,
+            background: C.bg }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.muted }}>TOTAL</div>
+            <div style={{ textAlign: "center", minWidth: 60, fontWeight: 800,
+              color: C.blue, fontVariantNumeric: "tabular-nums" }}>{totalUn}</div>
+            <div style={{ minWidth: 90 }} />
+            <div style={{ textAlign: "right", minWidth: 100, fontWeight: 800,
+              color: C.green, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>
+              {brl(totalVal)}
+            </div>
+          </div>
+        </Card>
+      )}
+    </>
+  );
+}
+
+// ============================================================
 //  PONTOS DE VENDA
 // ============================================================
 function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
   const [form, setForm] = useState(null);
+  const [selectedPdv, setSelectedPdv] = useState(null);
   const blank = { nome: "", local: "", responsavel: "", contato: "" };
+
+  // Se tiver PDV selecionado, mostra o detalhe
+  if (selectedPdv) {
+    // garante dados frescos caso o pdv tenha sido editado
+    const pdvAtual = pdvs.find((p) => p.id === selectedPdv.id) || selectedPdv;
+    return (
+      <>
+        {form && (
+          <Modal title="Editar ponto de venda" onClose={() => setForm(null)}>
+            <Field label="Nome da loja" req>
+              <Input value={form.nome} placeholder="Men's House"
+                onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+            </Field>
+            <Field label="Local / shopping">
+              <Input value={form.local} placeholder="Shopping Cidade Jardim"
+                onChange={(e) => setForm({ ...form, local: e.target.value })} />
+            </Field>
+            <Field label="Responsável / vendedora">
+              <Input value={form.responsavel}
+                onChange={(e) => setForm({ ...form, responsavel: e.target.value })} />
+            </Field>
+            <Field label="Contato (WhatsApp / e-mail)">
+              <Input value={form.contato}
+                onChange={(e) => setForm({ ...form, contato: e.target.value })} />
+            </Field>
+            <Btn full disabled={!form.nome.trim()}
+              onClick={async () => { await onSave(form); setForm(null); }}>
+              Salvar
+            </Btn>
+          </Modal>
+        )}
+        <PdvDetalhe
+          pdv={pdvAtual}
+          estoqueDe={estoqueDe}
+          onBack={() => setSelectedPdv(null)}
+          onEdit={() => setForm(pdvAtual)}
+          onRemove={async () => { await onRemove(pdvAtual.id); setSelectedPdv(null); }}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -664,7 +854,11 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
               const linhas = estoqueDe(p.id);
               const un = linhas.reduce((s, l) => s + l.qtd, 0);
               return (
-                <Card key={p.id}>
+                <Card key={p.id}
+                  onClick={() => setSelectedPdv(p)}
+                  style={{ cursor: "pointer", transition: "border-color 0.15s" }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = C.orange}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = C.border}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", gap: 10 }}>
                       <MapPin size={18} color={C.orange} style={{ marginTop: 2 }} />
@@ -673,7 +867,8 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
                         <div style={{ color: C.muted, fontSize: 13 }}>{p.local || "—"}</div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 6 }}
+                      onClick={(e) => e.stopPropagation()}>
                       <IconBtn onClick={() => setForm(p)} title="Editar"><User size={14} /></IconBtn>
                       <IconBtn onClick={() => onRemove(p.id)} title="Remover" danger>
                         <Trash2 size={14} />
@@ -682,13 +877,14 @@ function PdvView({ pdvs, onSave, onRemove, estoqueDe }) {
                   </div>
                   <div style={{ marginTop: 12, paddingTop: 12,
                     borderTop: `1px solid ${C.border}`,
-                    display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", fontSize: 13 }}>
                     <span style={{ color: C.muted }}>
                       {p.responsavel || "sem responsável"}
                     </span>
                     <span style={{ fontWeight: 700,
                       color: un ? C.blue : C.muted, fontVariantNumeric: "tabular-nums" }}>
-                      {un} em estoque
+                      {un} em estoque →
                     </span>
                   </div>
                 </Card>
@@ -976,236 +1172,4 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
                   <Input value={cli.telefone} inputMode="numeric"
                     placeholder="(11) 90000-0000"
                     onChange={(e) =>
-                      setCli({ ...cli, telefone: maskPhone(e.target.value) })} />
-                </Field>
-              </div>
-            </div>
-            <Field label="E-mail">
-              <Input type="email" value={cli.email} placeholder="cliente@email.com"
-                onChange={(e) => setCli({ ...cli, email: e.target.value })} />
-            </Field>
-            <Field label="Endereço completo">
-              <Input value={cli.endereco}
-                placeholder="Rua, nº, bairro, cidade, CEP"
-                onChange={(e) => setCli({ ...cli, endereco: e.target.value })} />
-            </Field>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <Btn kind="ghost" onClick={() => setStep(1)}>Voltar</Btn>
-              <div style={{ flex: 1 }}>
-                <Btn full disabled={!cliValido}
-                  onClick={async () => {
-                    await onAdd({
-                      tipo: "venda", pdvId, produtoId, qtd: 1,
-                      data, preco: prod?.preco || 0, cliente: cli,
-                    });
-                    reset();
-                  }}>
-                  <Check size={16} />Confirmar venda
-                </Btn>
-              </div>
-            </div>
-            {!cliValido && (
-              <p style={{ color: C.muted, fontSize: 12,
-                marginTop: 8, textAlign: "center" }}>
-                Nome e CPF são obrigatórios para emitir a nota.
-              </p>
-            )}
-          </>
-        )}
-      </Card>
-    </>
-  );
-}
-
-function Steps({ step }) {
-  const items = [["1", "Loja e quadro"], ["2", "Dados do cliente"]];
-  return (
-    <div style={{ display: "flex", gap: 10, marginBottom: 16, maxWidth: 520 }}>
-      {items.map(([n, label]) => {
-        const active = String(step) === n;
-        const done   = step > Number(n);
-        return (
-          <div key={n} style={{ flex: 1, display: "flex", alignItems: "center", gap: 9 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 99,
-              display: "grid", placeItems: "center", fontSize: 13, fontWeight: 800,
-              background: done ? C.green : active ? C.orange : C.surface2,
-              color: done || active ? "#0B0C0E" : C.muted,
-              border: `1px solid ${C.border}` }}>
-              {done ? <Check size={14} /> : n}
-            </div>
-            <span style={{ fontSize: 13, fontWeight: active ? 700 : 500,
-              color: active ? C.text : C.muted }}>{label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ============================================================
-//  VENDAS / NF
-// ============================================================
-function VendasView({ movs, pdvs, produtos, onRemove, flash }) {
-  const [q,        setQ]        = useState("");
-  const [copiedId, setCopiedId] = useState(null);
-
-  const pdvNome  = (id) => pdvs.find((p) => p.id === id)?.nome || "—";
-  const prodNome = (id) => produtos.find((p) => p.id === id)?.nome || "—";
-
-  const vendas   = movs.filter((m) => m.tipo === "venda");
-  const filtered = vendas.filter((v) => {
-    if (!q.trim()) return true;
-    const s = q.toLowerCase();
-    return (v.cliente?.nome || "").toLowerCase().includes(s)
-      || (v.cliente?.cpf || "").includes(s)
-      || prodNome(v.produtoId).toLowerCase().includes(s)
-      || pdvNome(v.pdvId).toLowerCase().includes(s);
-  });
-
-  const copyCliente = (v) => {
-    const c   = v.cliente || {};
-    const txt = [
-      `Cliente: ${c.nome || ""}`,
-      `CPF: ${c.cpf || ""}`,
-      `E-mail: ${c.email || ""}`,
-      `Telefone: ${c.telefone || ""}`,
-      `Endereço: ${c.endereco || ""}`,
-      `Produto: ${prodNome(v.produtoId)}`,
-      `Valor: ${brl(v.preco)}`,
-      `Loja: ${pdvNome(v.pdvId)}`,
-      `Data: ${fmtDate(v.data)}`,
-    ].join("\n");
-    navigator.clipboard?.writeText(txt);
-    setCopiedId(v.id);
-    flash("Dados copiados — cole no Bling");
-    setTimeout(() => setCopiedId(null), 1800);
-  };
-
-  const exportCsv = () => {
-    const head = ["Data","Cliente","CPF","Email","Telefone",
-      "Endereço","Produto","Valor","Loja"];
-    const rows = filtered.map((v) => {
-      const c = v.cliente || {};
-      return [fmtDate(v.data), c.nome, c.cpf, c.email, c.telefone, c.endereco,
-        prodNome(v.produtoId),
-        String(v.preco).replace(".", ","),
-        pdvNome(v.pdvId)]
-        .map((x) => `"${(x || "").toString().replace(/"/g, '""')}"`).join(";");
-    });
-    const csv  = "\uFEFF" + [head.join(";"), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const a    = document.createElement("a");
-    a.href     = URL.createObjectURL(blob);
-    a.download = `funparts_vendas_${today()}.csv`;
-    a.click();
-    flash("Planilha exportada");
-  };
-
-  const totalFiltrado = filtered.reduce((s, v) => s + (Number(v.preco) || 0), 0);
-
-  return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between",
-        alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-        <SectionTitle sub="Cada venda traz os dados prontos para emitir a nota fiscal.">
-          Vendas / Nota fiscal
-        </SectionTitle>
-        {vendas.length > 0 && (
-          <Btn kind="blue" onClick={exportCsv}>
-            <Download size={16} />Exportar CSV
-          </Btn>
-        )}
-      </div>
-
-      {vendas.length === 0
-        ? <Empty icon={FileText} title="Nenhuma venda registrada"
-            hint="Quando uma venda for registrada, ela aparece aqui com os dados do cliente." />
-        : (
-          <>
-            <div style={{ position: "relative", marginBottom: 14, maxWidth: 420 }}>
-              <Search size={16} color={C.muted}
-                style={{ position: "absolute", left: 12, top: 13 }} />
-              <Input value={q}
-                placeholder="Buscar por cliente, CPF, quadro ou loja…"
-                onChange={(e) => setQ(e.target.value)}
-                style={{ paddingLeft: 36 }} />
-            </div>
-
-            <div style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>
-              {filtered.length} venda(s) ·{" "}
-              <b style={{ color: C.text }}>{brl(totalFiltrado)}</b>
-            </div>
-
-            <div style={{ display: "grid", gap: 12 }}>
-              {filtered.map((v) => {
-                const c = v.cliente || {};
-                return (
-                  <Card key={v.id} style={{ padding: 16 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between",
-                      alignItems: "flex-start" }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 16 }}>
-                          {c.nome || "—"}
-                        </div>
-                        <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>
-                          {prodNome(v.produtoId)} · {pdvNome(v.pdvId)} · {fmtDate(v.data)}
-                        </div>
-                      </div>
-                      <span style={{ fontWeight: 800, color: C.orange,
-                        fontVariantNumeric: "tabular-nums" }}>
-                        {brl(v.preco)}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
-                      gap: "6px 16px", marginTop: 12, paddingTop: 12,
-                      borderTop: `1px solid ${C.border}`, fontSize: 13 }}>
-                      <KV k="CPF"       v={c.cpf} />
-                      <KV k="Telefone"  v={c.telefone} />
-                      <KV k="E-mail"    v={c.email} />
-                      <KV k="Endereço"  v={c.endereco} />
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                      <Btn kind="ghost" onClick={() => copyCliente(v)}>
-                        {copiedId === v.id ? <Check size={14} /> : <Copy size={14} />}
-                        {copiedId === v.id ? "Copiado" : "Copiar p/ NF"}
-                      </Btn>
-                      <IconBtn onClick={() => onRemove(v.id)}
-                        title="Estornar venda" danger>
-                        <Trash2 size={14} />
-                      </IconBtn>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </>
-        )
-      }
-    </>
-  );
-}
-
-function KV({ k, v }) {
-  return (
-    <div>
-      <span style={{ color: C.muted, fontSize: 11.5 }}>{k}: </span>
-      <span style={{ color: C.text }}>{v || "—"}</span>
-    </div>
-  );
-}
-
-// ============================================================
-//  CSS GLOBAL
-// ============================================================
-const globalCss = `
-  * { box-sizing: border-box; }
-  .no-sb::-webkit-scrollbar { height: 0; }
-  select option { background: ${C.surface}; color: ${C.text}; }
-  input::placeholder { color: ${C.muted}; opacity: .7; }
-  body { margin: 0; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-`;
+                      setCli({ ...cli, tele
