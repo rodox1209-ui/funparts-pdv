@@ -523,8 +523,127 @@ function Painel({ pdvs, produtos, movs, estoqueDe, setTab }) {
     .sort((a, b) => b.q - a.q).slice(0, 6);
   const maxRank = Math.max(1, ...ranking.map((r) => r.q));
 
-  return (
+
+  const [query, setQuery] = useState("");
+  const results = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    return produtos
+      .filter(p =>
+        (p.nome || "").toLowerCase().includes(q) ||
+        (p.modelo || "").toLowerCase().includes(q)
+      )
+      .map(produto => {
+        const pdvMap = {};
+        movs.forEach(mv => {
+          if (mv.produtoId !== produto.id) return;
+          if (!pdvMap[mv.pdvId]) pdvMap[mv.pdvId] = { entrada: 0, saida: 0, venda: 0 };
+          const n = Number(mv.qtd) || 0;
+          if (mv.tipo === "entrada")     pdvMap[mv.pdvId].entrada += n;
+          else if (mv.tipo === "saida")  pdvMap[mv.pdvId].saida += n;
+          else if (mv.tipo === "venda")  pdvMap[mv.pdvId].venda += n;
+        });
+        const locs = pdvs
+          .map(pdv => ({
+            pdv,
+            stock: (pdvMap[pdv.id]?.entrada || 0)
+                 - (pdvMap[pdv.id]?.saida   || 0)
+                 - (pdvMap[pdv.id]?.venda   || 0),
+            vendas: pdvMap[pdv.id]?.venda || 0,
+          }))
+          .filter(l => l.stock > 0 || l.vendas > 0);
+        return { produto, locs };
+      });
+  }, [query, produtos, pdvs, movs]);
+    return (
     <>
+
+      {/* ── BUSCA ── */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ position: "relative" }}>
+          <Search size={15} style={{ position: "absolute", left: 14,
+            top: "50%", transform: "translateY(-50%)",
+            color: C.muted, pointerEvents: "none" }} />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar produto, modelo ou pedido…"
+            style={{ width: "100%", boxSizing: "border-box",
+              padding: "12px 14px 12px 42px", background: C.surface,
+              border: `1px solid ${query ? C.orange : C.border}`,
+              borderRadius: 10, color: C.text, fontSize: 14,
+              outline: "none", transition: "border-color 0.2s" }}
+          />
+          {query && (
+            <button onClick={() => setQuery("")}
+              style={{ position: "absolute", right: 12, top: "50%",
+                transform: "translateY(-50%)", background: "none",
+                border: "none", color: C.muted, cursor: "pointer",
+                display: "grid", placeItems: "center" }}>
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        {query.trim() && (
+          <div style={{ marginTop: 8, background: C.surface,
+            border: `1px solid ${C.border}`, borderRadius: 12,
+            overflow: "hidden" }}>
+            {results.length === 0
+              ? <p style={{ color: C.muted, textAlign: "center",
+                  padding: "20px 0", fontSize: 13, margin: 0 }}>
+                  Nenhum resultado para "{query}"
+                </p>
+              : results.map(({ produto, locs }) => (
+                <div key={produto.id} style={{ padding: "14px 16px",
+                  borderBottom: `1px solid ${C.border}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between",
+                    alignItems: "baseline", marginBottom: 10 }}>
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: 15 }}>{produto.nome}</span>
+                      {produto.modelo && (
+                        <span style={{ color: C.muted, fontSize: 12.5,
+                          marginLeft: 8 }}>{produto.modelo}</span>
+                      )}
+                    </div>
+                    <span style={{ color: C.orange, fontWeight: 700,
+                      fontSize: 13, fontVariantNumeric: "tabular-nums",
+                      whiteSpace: "nowrap", marginLeft: 8 }}>
+                      {brl(produto.preco)}
+                    </span>
+                  </div>
+                  {locs.length === 0
+                    ? <span style={{ color: C.muted, fontSize: 12.5 }}>
+                        Sem movimentações registradas
+                      </span>
+                    : <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {locs.map(loc => (
+                          <div key={loc.pdv.id} style={{
+                            background: loc.stock > 0 ? C.orange + "18" : C.surface2,
+                            border: `1px solid ${loc.stock > 0 ? C.orange : C.border}`,
+                            borderRadius: 8, padding: "7px 12px" }}>
+                            <div style={{ fontWeight: 600, fontSize: 12,
+                              color: loc.stock > 0 ? C.orange : C.muted,
+                              display: "flex", alignItems: "center", gap: 4 }}>
+                              <MapPin size={10} />{loc.pdv.nome}
+                            </div>
+                            <div style={{ fontSize: 11.5, marginTop: 2,
+                              color: loc.stock > 0 ? C.text : C.muted,
+                              fontVariantNumeric: "tabular-nums" }}>
+                              {loc.stock > 0
+                                ? `Em estoque · ${loc.stock} un`
+                                : `Vendido · ${loc.vendas} un`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                  }
+                </div>
+              ))
+            }
+          </div>
+        )}
+      </div>
       <SectionTitle sub="Visão geral do que está na rua e do que já vendeu.">Painel</SectionTitle>
 
       <div style={{ display: "grid",
