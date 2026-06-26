@@ -1163,12 +1163,12 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
   const [produtoId, setProd]  = useState("");
   const [data,      setData]  = useState(today());
   const [cli,       setCli]   = useState(
-    { nome: "", cpf: "", email: "", telefone: "", endereco: "" }
+    { nome: "", cpf: "", email: "", telefone: "", rua: "", numero: "", bairro: "", cidade: "", estado: "", cep: "" }
   );
 
   const disponiveis = pdvId ? estoqueDe(pdvId) : [];
   const prod = produtos.find((p) => p.id === produtoId);
-  const cliValido = cli.nome.trim() && cli.cpf.replace(/\D/g, "").length === 11;
+  const cliValido = cli.nome.trim() && cli.cpf.trim() && cli.rua.trim() && cli.numero.trim() && cli.bairro.trim() && cli.cidade.trim() && cli.estado.trim() && cli.cep.trim();
 
   const reset = () => {
     setStep(1); setProd(""); setData(today());
@@ -1289,11 +1289,50 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
               <Input type="email" value={cli.email} placeholder="cliente@email.com"
                 onChange={(e) => setCli({ ...cli, email: e.target.value })} />
             </Field>
-            <Field label="Endereço completo">
-              <Input value={cli.endereco}
-                placeholder="Rua, nº, bairro, cidade, CEP"
-                onChange={(e) => setCli({ ...cli, endereco: e.target.value })} />
-            </Field>
+            <Field label="Rua / Avenida *">
+                <Input value={cli.rua}
+                  onChange={(e) => setCli({ ...cli, rua: e.target.value })}
+                  placeholder="Ex: Alameda Joaquim Eugênio de Lima" />
+              </Field>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: "0 0 100px" }}>
+                  <Field label="Número *">
+                    <Input value={cli.numero}
+                      onChange={(e) => setCli({ ...cli, numero: e.target.value })}
+                      placeholder="984" />
+                  </Field>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Field label="Bairro *">
+                    <Input value={cli.bairro}
+                      onChange={(e) => setCli({ ...cli, bairro: e.target.value })}
+                      placeholder="Jardim Paulista" />
+                  </Field>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <Field label="Cidade *">
+                    <Input value={cli.cidade}
+                      onChange={(e) => setCli({ ...cli, cidade: e.target.value })}
+                      placeholder="São Paulo" />
+                  </Field>
+                </div>
+                <div style={{ flex: "0 0 80px" }}>
+                  <Field label="Estado *">
+                    <Input value={cli.estado} maxLength={2}
+                      onChange={(e) => setCli({ ...cli, estado: e.target.value.toUpperCase() })}
+                      placeholder="SP" />
+                  </Field>
+                </div>
+                <div style={{ flex: "0 0 120px" }}>
+                  <Field label="CEP *">
+                    <Input value={cli.cep} maxLength={9}
+                      onChange={(e) => setCli({ ...cli, cep: e.target.value })}
+                      placeholder="00000-000" />
+                  </Field>
+                </div>
+              </div>
 
             <div style={{ display: "flex", gap: 10 }}>
               <Btn kind="ghost" onClick={() => setStep(1)}>Voltar</Btn>
