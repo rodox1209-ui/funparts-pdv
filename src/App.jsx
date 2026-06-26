@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   LayoutGrid, Store, Package, Truck, ShoppingBag, FileText,
-  Plus, Trash2, X, Copy, Check, Download, MapPin, User, Search,
+  Plus, Trash2, Pencil, X, Copy, Check, Download, MapPin, User, Search,
   TrendingUp, AlertTriangle, Boxes, RefreshCw, Wifi, WifiOff,
 } from "lucide-react";
 import { listAll, put, del, probeStorage } from "./storage";
@@ -917,7 +917,7 @@ function CatalogoView({ produtos, onSave, onRemove, pdvs, estoqueDe }) {
                       <Pencil size={13} />
                     </IconBtn>
                     <IconBtn onClick={() => onRemove(p.id)} title="Remover">
-                      <Trash size={13} />
+                      <Trash2 size={13} />
                     </IconBtn>
                   </div>
                 ))
