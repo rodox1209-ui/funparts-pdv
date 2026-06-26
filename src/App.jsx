@@ -913,12 +913,12 @@ function CatalogoView({ produtos, onSave, onRemove, pdvs, estoqueDe }) {
                           textAlign: "center", outline: "none",
                           fontVariantNumeric: "tabular-nums" }} />
                     </div>
-                    <Ic onClick={() => setForm({ ...p })} title="Editar">
+                    <IconBtn onClick={() => setForm({ ...p })} title="Editar">
                       <Pencil size={13} />
-                    </Ic>
-                    <Ic onClick={() => onRemove(p.id)} title="Remover">
+                    </IconBtn>
+                    <IconBtn onClick={() => onRemove(p.id)} title="Remover">
                       <Trash size={13} />
-                    </Ic>
+                    </IconBtn>
                   </div>
                 ))
               }
