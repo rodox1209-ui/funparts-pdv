@@ -811,100 +811,161 @@ function PdvDetalhe({ pdv, pdvs, estoqueDe, onAddMov, onClose }) {
 }
 
 
-function CatalogoView({ produtos, onSave, onRemove }) {
+function CatalogoView({ produtos, onSave, onRemove, pdvs, estoqueDe }) {
   const [form, setForm] = useState(null);
-  const blank = { nome: "", modelo: "", preco: "", qtd: "" };
+
+  const CATS = [
+    { key: "quadros-prontos", label: "Quadros prontos" },
+    { key: "somente-quadros", label: "Somente quadros" },
+    { key: "miniaturas",      label: "Miniaturas" },
+  ];
+
+  const catProds = (key) =>
+    produtos.filter(p => (p.categoria || "quadros-prontos") === key);
+
+  const blank = { nome: "", modelo: "", preco: "", qtd: "", categoria: "quadros-prontos" };
+
+  const save = () => {
+    if (!form.nome.trim() || !form.preco) return;
+    onSave(form);
+    setForm(null);
+  };
+
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between",
-        alignItems: "flex-start" }}>
-        <SectionTitle sub="Os quadros que você produz e despacha para os PDVs.">
-          Catálogo
-        </SectionTitle>
-        <Btn onClick={() => setForm(blank)}><Plus size={16} />Novo quadro</Btn>
+        alignItems: "flex-start", marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontWeight: 800, fontSize: 22, letterSpacing: "0.04em",
+            color: C.text, margin: 0 }}>CATÁLOGO</h2>
+          <p style={{ color: C.muted, fontSize: 13, marginTop: 4 }}>
+            Produtos disponíveis para consignação.</p>
+        </div>
+        <Btn onClick={() => setForm({ ...blank })}>+ Novo</Btn>
+      </div>
+
+      {pdvs && pdvs.length > 0 && estoqueDe && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
+          {pdvs.map(pdv => {
+            const linhas = estoqueDe(pdv.id);
+            const tot = linhas.reduce((s, l) => s + l.qtd, 0);
+            const val = linhas.reduce((s, l) => s + l.qtd * (Number(l.produto.preco) || 0), 0);
+            return (
+              <div key={pdv.id} style={{ background: C.surface2,
+                border: `1px solid ${C.border}`, borderRadius: 10,
+                padding: "12px 16px", flex: "1 1 150px" }}>
+                <div style={{ fontSize: 11, color: C.muted, fontWeight: 700,
+                  textTransform: "uppercase", letterSpacing: "0.06em",
+                  marginBottom: 4 }}>{pdv.nome}</div>
+                <div style={{ fontWeight: 800, fontSize: 22, color: C.orange,
+                  fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{tot}</div>
+                <div style={{ fontSize: 11.5, color: C.blue, marginTop: 2,
+                  fontVariantNumeric: "tabular-nums" }}>{brl(val)}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 18, alignItems: "start" }}>
+        {CATS.map(cat => {
+          const prods = catProds(cat.key);
+          return (
+            <div key={cat.key} style={{ background: C.surface,
+              border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ padding: "11px 14px",
+                borderBottom: `1px solid ${C.border}`,
+                background: C.surface2,
+                display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 700, fontSize: 12.5,
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                  color: C.orange }}>{cat.label}</span>
+                <span style={{ fontSize: 11.5, color: C.muted, fontWeight: 600,
+                  background: C.bg, borderRadius: 20, padding: "2px 8px" }}>
+                  {prods.length}
+                </span>
+              </div>
+              {prods.length === 0
+                ? <p style={{ color: C.muted, fontSize: 12.5, textAlign: "center",
+                    padding: "18px 0", margin: 0 }}>Nenhum produto</p>
+                : prods.map(p => (
+                  <div key={p.id} style={{ padding: "9px 14px",
+                    borderBottom: `1px solid ${C.border}`,
+                    display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13,
+                        whiteSpace: "nowrap", overflow: "hidden",
+                        textOverflow: "ellipsis" }}>{p.nome}</div>
+                      <div style={{ color: C.muted, fontSize: 11.5,
+                        fontVariantNumeric: "tabular-nums" }}>{brl(p.preco)}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4,
+                      background: C.surface2, border: `1px solid ${C.border}`,
+                      borderRadius: 7, padding: "4px 7px" }}>
+                      <span style={{ color: C.muted, fontSize: 10, fontWeight: 700,
+                        letterSpacing: 0.5, textTransform: "uppercase" }}>Qtd</span>
+                      <input type="number" min={0}
+                        defaultValue={p.qtd || 0}
+                        onBlur={(e) => onSave({ ...p, qtd: Number(e.target.value) })}
+                        style={{ width: 32, background: "transparent", border: "none",
+                          color: C.blue, fontSize: 14, fontWeight: 800,
+                          textAlign: "center", outline: "none",
+                          fontVariantNumeric: "tabular-nums" }} />
+                    </div>
+                    <Ic onClick={() => setForm({ ...p })} title="Editar">
+                      <Pencil size={13} />
+                    </Ic>
+                    <Ic onClick={() => onRemove(p.id)} title="Remover">
+                      <Trash size={13} />
+                    </Ic>
+                  </div>
+                ))
+              }
+            </div>
+          );
+        })}
       </div>
 
       {form && (
-        <Modal title={form.id ? "Editar quadro" : "Novo quadro"}
+        <Modal title={form.id ? "Editar produto" : "Novo produto"}
           onClose={() => setForm(null)}>
-          <Field label="Nome do quadro" req>
-            <Input value={form.nome} placeholder="McLaren Senna"
+          <Field label="Nome do produto">
+            <Input value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })} />
           </Field>
-          <Field label="Modelo / linha">
-            <Input value={form.modelo} placeholder="LEGO Speed Champions"
+          <Field label="Modelo / Referência">
+            <Input value={form.modelo}
               onChange={(e) => setForm({ ...form, modelo: e.target.value })} />
           </Field>
-          <Field label="Preço de venda (R$)" req>
-            <Input type="number" value={form.preco} placeholder="1490"
+          <Field label="Categoria">
+            <select value={form.categoria || "quadros-prontos"}
+              onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+              style={{ ...inputStyle, width: "100%", appearance: "none",
+                WebkitAppearance: "none", cursor: "pointer" }}>
+              <option value="quadros-prontos">Quadros prontos</option>
+              <option value="somente-quadros">Somente quadros</option>
+              <option value="miniaturas">Miniaturas</option>
+            </select>
+          </Field>
+          <Field label="Preço de venda (R$)">
+            <Input type="number" min={0} value={form.preco}
               onChange={(e) => setForm({ ...form, preco: e.target.value })} />
           </Field>
-        <Field label="Qtd. em mãos">
-          <Input type="number" min={0} value={form.qtd || ""} placeholder="0"
-            onChange={(e) => setForm({ ...form, qtd: e.target.value })} />
-        </Field>
-          <Btn full disabled={!form.nome.trim() || !form.preco}
-            onClick={async () => { await onSave(form); setForm(null); }}>
-            Salvar
+          <Field label="Qtd. em mãos">
+            <Input type="number" min={0} value={form.qtd || ""} placeholder="0"
+              onChange={(e) => setForm({ ...form, qtd: e.target.value })} />
+          </Field>
+          <Btn full disabled={!form.nome.trim() || !form.preco} onClick={save}>
+            {form.id ? "Salvar" : "Adicionar"}
           </Btn>
         </Modal>
       )}
-
-      {produtos.length === 0
-        ? <Empty icon={Package} title="Catálogo vazio"
-            hint="Cadastre os quadros com preço para usá-los nos envios e vendas."
-            action={<Btn onClick={() => setForm(blank)}><Plus size={16} />Cadastrar</Btn>} />
-        : (
-          <Card style={{ padding: 0, overflow: "hidden" }}>
-            {produtos.map((p, i) => (
-              <div key={p.id}
-                style={{ display: "flex", alignItems: "center",
-                  justifyContent: "space-between", padding: "14px 16px",
-                  borderTop: i ? `1px solid ${C.border}` : "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8,
-                    background: C.bg, display: "grid", placeItems: "center",
-                    border: `1px solid ${C.border}` }}>
-                    <Package size={16} color={C.blue} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 15 }}>{p.nome}</div>
-                    <div style={{ color: C.muted, fontSize: 12.5 }}>{p.modelo || "—"}</div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5,
-                    background: C.surface2, border: `1px solid ${C.border}`,
-                    borderRadius: 8, padding: "5px 10px", minWidth: 76 }}>
-                    <span style={{ color: C.muted, fontSize: 11, fontWeight: 600,
-                      letterSpacing: 0.5, textTransform: "uppercase" }}>Qtd</span>
-                    <input type="number" min={0}
-                      defaultValue={p.qtd || 0}
-                      onBlur={(e) => onSave({ ...p, qtd: Number(e.target.value) })}
-                      style={{ width: 38, background: "transparent", border: "none",
-                        color: C.blue, fontSize: 15, fontWeight: 800,
-                        textAlign: "center", outline: "none", cursor: "text",
-                        fontVariantNumeric: "tabular-nums" }} />
-                  </div>
-                  <span style={{ fontWeight: 700, color: C.orange,
-                    fontVariantNumeric: "tabular-nums" }}>{brl(p.preco)}</span>
-                  <IconBtn onClick={() => setForm(p)} title="Editar"><User size={14} /></IconBtn>
-                  <IconBtn onClick={() => onRemove(p.id)} title="Remover" danger>
-                    <Trash2 size={14} />
-                  </IconBtn>
-                </div>
-              </div>
-            ))}
-          </Card>
-        )
-      }
     </>
   );
 }
 
-// ============================================================
-//  ENVIAR
-// ============================================================
+
 function EnviarView({ pdvs, produtos, onAdd, setTab }) {
   const [pdvId,     setPdvId]     = useState("");
   const [produtoId, setProdutoId] = useState("");
