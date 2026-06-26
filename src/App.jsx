@@ -195,7 +195,7 @@ export default function App() {
         {tab === "pdv"      && <PdvView pdvs={pdvs} onSave={savePdv}
                                 onRemove={removePdv} estoqueDe={estoqueDe} onAddMov={addMov} />}
         {tab === "catalogo" && <CatalogoView produtos={produtos}
-                                onSave={saveProduto} onRemove={removeProduto} />}
+                                onSave={saveProduto} onRemove={removeProduto} pdvs={pdvs} estoqueDe={estoqueDe} />}
         {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos}
                                 onAdd={addMov} setTab={setTab} />}
         {tab === "vender"   && <VenderView pdvs={pdvs} produtos={produtos}
