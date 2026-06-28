@@ -492,7 +492,7 @@ const [auth, setAuth] = useState(() => {
                                 onRemove={removePdv} estoqueDe={estoqueDe} onAddMov={addMov} />}
         {tab === "catalogo" && <CatalogoView produtos={produtos}
                                 onSave={saveProduto} onRemove={removeProduto} pdvs={pdvs} estoqueDe={estoqueDe} />}
-        {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos} estoqueDe={estoqueDe}
+        {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos} movs={movs}
                                 onAdd={addMov} setTab={setTab} />}
         {tab === "vender"   && <VenderView pdvs={pdvs} produtos={produtos}
                                 estoqueDe={estoqueDe} onAdd={addMov} setTab={setTab} />}
@@ -1392,19 +1392,18 @@ function CatalogoView({ produtos, onSave, onRemove, pdvs, estoqueDe }) {
 }
 
 
-function EnviarView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
+function EnviarView({ pdvs, produtos, movs, onAdd, setTab }) {
   const [pdvId,     setPdvId]     = useState("");
   const [produtoId, setProdutoId] = useState("");
   const [qtd,       setQtd]       = useState(1);
   const [data,      setData]      = useState(today());
 
   const ready = pdvs.length && produtos.length;
-  const jaDistribuidos = new Set(
-    pdvs.flatMap(pdv =>
-      estoqueDe(pdv.id).filter(({ qtd }) => qtd > 0).map(({ produto }) => produto.id)
-    )
-  );
-  const produtosDisp = produtos.filter(p => !jaDistribuidos.has(p.id));
+  const _enviados = {};
+  for (const mv of movs) {
+    if (mv.tipo === "entrada") _enviados[mv.produtoId] = (_enviados[mv.produtoId] || 0) + Number(mv.qtd || 0);
+  }
+  const produtosDisp = produtos.filter(p => Number(p.qtd || 0) > (_enviados[p.id] || 0));
   const valid = pdvId && produtoId && qtd > 0;
 
   if (!ready) return (
