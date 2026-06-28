@@ -492,7 +492,7 @@ const [auth, setAuth] = useState(() => {
                                 onRemove={removePdv} estoqueDe={estoqueDe} onAddMov={addMov} />}
         {tab === "catalogo" && <CatalogoView produtos={produtos}
                                 onSave={saveProduto} onRemove={removeProduto} pdvs={pdvs} estoqueDe={estoqueDe} />}
-        {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos}
+        {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos} estoque={estoque}
                                 onAdd={addMov} setTab={setTab} />}
         {tab === "vender"   && <VenderView pdvs={pdvs} produtos={produtos}
                                 estoqueDe={estoqueDe} onAdd={addMov} setTab={setTab} />}
@@ -1392,13 +1392,19 @@ function CatalogoView({ produtos, onSave, onRemove, pdvs, estoqueDe }) {
 }
 
 
-function EnviarView({ pdvs, produtos, onAdd, setTab }) {
+function EnviarView({ pdvs, produtos, estoque, onAdd, setTab }) {
   const [pdvId,     setPdvId]     = useState("");
   const [produtoId, setProdutoId] = useState("");
   const [qtd,       setQtd]       = useState(1);
   const [data,      setData]      = useState(today());
 
   const ready = pdvs.length && produtos.length;
+  const jaDistribuidos = new Set(
+    pdvs.flatMap(pdv =>
+      produtos.filter(p => (estoque[`${pdv.id}|${p.id}`] || 0) > 0).map(p => p.id)
+    )
+  );
+  const produtosDisp = produtos.filter(p => !jaDistribuidos.has(p.id));
   const valid = pdvId && produtoId && qtd > 0;
 
   if (!ready) return (
@@ -1431,7 +1437,7 @@ function EnviarView({ pdvs, produtos, onAdd, setTab }) {
         <Field label="Quadro" req>
           <Sel value={produtoId} onChange={(e) => setProdutoId(e.target.value)}>
             <option value="">Selecione…</option>
-            {produtos.map((p) =>
+            {produtosDisp.map((p) =>
               <option key={p.id} value={p.id}>{p.nome} ({brl(p.preco)})</option>)}
           </Sel>
         </Field>
