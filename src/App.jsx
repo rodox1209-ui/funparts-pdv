@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   LayoutGrid, Store, Package, Truck, ShoppingBag, FileText,
   Plus, Trash2, Pencil, X, Copy, Check, Download, MapPin, User, Search,
-  TrendingUp, AlertTriangle, Boxes, RefreshCw, Wifi, WifiOff,
+  TrendingUp, AlertTriangle, Boxes, RefreshCw, Wifi, WifiOff, Lock, LogOut, Shield, Eye, EyeOff,
 } from "lucide-react";
 import { listAll, put, del, probeStorage } from "./storage";
 
@@ -60,8 +60,293 @@ const PFX = { pdv: "fpc:pdv:", prod: "fpc:prod:", mov: "fpc:mov:" };
 // ============================================================
 //  APP
 // ============================================================
+
+// ────────────────────────────────────────────────────────────────────────────────
+// AUTH HELPERS
+// ────────────────────────────────────────────────────────────────────────────────
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+const PERM_LABELS = {
+  painel:   'Painel',
+  vender:   'Registrar Venda',
+  enviar:   'Transferir Estoque',
+  pdv:      'Pontos de Venda',
+  catalogo: 'Catálogo',
+  vendas:   'Vendas / NF',
+};
+const DEFAULT_PERMS = { painel:true, vender:true, enviar:true, pdv:false, catalogo:true, vendas:true };
+
+// ────────────────────────────────────────────────────────────────────────────────
+// LOGIN SCREEN
+// ────────────────────────────────────────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [tipo, setTipo] = useState('pdv');
+  const [pdvId, setPdvId] = useState('');
+  const [senha, setSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
+  const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [pdvList, setPdvList] = useState([]);
+  const [firstSetup, setFirstSetup] = useState(false);
+  const [senhaConf, setSenhaConf] = useState('');
+
+  useEffect(() => {
+    Promise.all([listAll('pdv:'), listAll('auth:master')]).then(([pvs, ms]) => {
+      setPdvList(pvs || []);
+      if (!ms || ms.length === 0) setFirstSetup(true);
+    });
+  }, []);
+
+  const doLogin = async () => {
+    if (!senha.trim()) { setErro('Digite a senha.'); return; }
+    setLoading(true); setErro('');
+    try {
+      const hash = await sha256(senha);
+      if (tipo === 'master') {
+        const ms = await listAll('auth:master');
+        if (ms?.[0]?.senhaHash === hash) {
+          const s = { tipo: 'master' };
+          sessionStorage.setItem('fp_auth', JSON.stringify(s));
+          onLogin(s);
+        } else setErro('Senha incorreta.');
+      } else {
+        if (!pdvId) { setErro('Selecione o PDV.'); setLoading(false); return; }
+        const as2 = await listAll('auth:pdv:');
+        const found = (as2 || []).find(a => a.pdvId === pdvId);
+        if (!found?.senhaHash) { setErro('Acesso não configurado. Fale com o administrador.'); setLoading(false); return; }
+        if (found.senhaHash === hash) {
+          const s = { tipo: 'pdv', pdvId, permissoes: found.permissoes || DEFAULT_PERMS };
+          sessionStorage.setItem('fp_auth', JSON.stringify(s));
+          onLogin(s);
+        } else setErro('Senha incorreta.');
+      }
+    } catch { setErro('Erro de conexão. Tente novamente.'); }
+    setLoading(false);
+  };
+
+  const doSetup = async () => {
+    if (senha.length < 6) { setErro('Mínimo 6 caracteres.'); return; }
+    if (senha !== senhaConf) { setErro('As senhas não coincidem.'); return; }
+    setLoading(true);
+    const hash = await sha256(senha);
+    await put('auth:master', { id: 'master', senhaHash: hash });
+    setFirstSetup(false); setErro(''); setSenha(''); setSenhaConf('');
+    setLoading(false);
+  };
+
+  const Sc = {
+    screen: { minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+    box: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20, padding: '48px 40px', width: 380, maxWidth: '100%' },
+    logoRow: { display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginBottom: 8 },
+    bar: { width: 4, height: 28, background: C.orange, borderRadius: 3 },
+    logoTxt: { fontSize: 24, fontWeight: 800, color: C.text, letterSpacing: '-0.5px' },
+    sub: { fontSize: 11, color: C.muted, textTransform: 'uppercase', letterSpacing: 2, textAlign: 'center', marginBottom: 28 },
+    lbl: { fontSize: 11.5, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, display: 'block' },
+    inp: { width: '100%', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', color: C.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' },
+    rel: { position: 'relative' },
+    eye: { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: C.muted, display: 'flex' },
+    btn: { width: '100%', background: C.orange, border: 'none', borderRadius: 10, padding: '14px', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 20 },
+    tabs: { display: 'flex', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, marginBottom: 24, overflow: 'hidden' },
+    tab: (a) => ({ flex: 1, padding: '10px 0', border: 'none', background: a ? C.orange : 'transparent', color: a ? '#fff' : C.muted, fontWeight: 700, fontSize: 13, cursor: 'pointer' }),
+    err: { background: '#ff444418', border: '1px solid #ff444466', borderRadius: 8, padding: '10px 14px', color: '#ff7070', fontSize: 13, marginTop: 12 },
+    sel: { width: '100%', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', color: C.text, fontSize: 14, outline: 'none', boxSizing: 'border-box', appearance: 'none' },
+  };
+
+  if (firstSetup) return (
+    <div style={Sc.screen}><div style={Sc.box}>
+      <div style={Sc.logoRow}><div style={Sc.bar}/><span style={Sc.logoTxt}>FUNPARTS</span></div>
+      <p style={{ ...Sc.sub, color: C.orange }}>Configuração inicial</p>
+      <p style={{ fontSize: 13, color: C.muted, textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
+        Defina a senha master para começar a usar o sistema.
+      </p>
+      <div style={{ marginBottom: 14 }}>
+        <span style={Sc.lbl}>Nova senha *</span>
+        <div style={Sc.rel}>
+          <input style={Sc.inp} type={showSenha?'text':'password'} value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Mínimo 6 caracteres"/>
+          <button style={Sc.eye} onClick={()=>setShowSenha(v=>!v)}>{showSenha?<EyeOff size={15}/>:<Eye size={15}/>}</button>
+        </div>
+      </div>
+      <div style={{ marginBottom: 4 }}>
+        <span style={Sc.lbl}>Confirmar senha *</span>
+        <input style={Sc.inp} type="password" value={senhaConf} onChange={e=>setSenhaConf(e.target.value)} placeholder="Repita a senha"/>
+      </div>
+      {erro && <div style={Sc.err}>{erro}</div>}
+      <button style={Sc.btn} onClick={doSetup} disabled={loading}>{loading?'Salvando…':'Configurar acesso master'}</button>
+    </div></div>
+  );
+
+  return (
+    <div style={Sc.screen}><div style={Sc.box}>
+      <div style={Sc.logoRow}><div style={Sc.bar}/><span style={Sc.logoTxt}>FUNPARTS</span></div>
+      <p style={Sc.sub}>Controle de Consignação</p>
+      <div style={Sc.tabs}>
+        <button style={Sc.tab(tipo==='pdv')} onClick={()=>{setTipo('pdv');setErro('');}}>Ponto de Venda</button>
+        <button style={Sc.tab(tipo==='master')} onClick={()=>{setTipo('master');setErro('');}}>Master</button>
+      </div>
+      {tipo==='pdv' && (
+        <div style={{ marginBottom: 14 }}>
+          <span style={Sc.lbl}>Ponto de Venda</span>
+          <select style={Sc.sel} value={pdvId} onChange={e=>setPdvId(e.target.value)}>
+            <option value="">Selecione…</option>
+            {pdvList.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}
+          </select>
+        </div>
+      )}
+      <div style={{ marginBottom: 4 }}>
+        <span style={Sc.lbl}>Senha</span>
+        <div style={Sc.rel}>
+          <input style={Sc.inp} type={showSenha?'text':'password'} value={senha}
+            onChange={e=>setSenha(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&doLogin()}
+            placeholder="Digite a senha"/>
+          <button style={Sc.eye} onClick={()=>setShowSenha(v=>!v)}>{showSenha?<EyeOff size={15}/>:<Eye size={15}/>}</button>
+        </div>
+      </div>
+      {erro && <div style={Sc.err}>{erro}</div>}
+      <button style={Sc.btn} onClick={doLogin} disabled={loading}>{loading?'Entrando…':'Entrar'}</button>
+    </div></div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// ACESSOS VIEW
+// ────────────────────────────────────────────────────────────────────────────────
+function AcessosView({ pdvs }) {
+  const [pdvAuths, setPdvAuths] = useState({});
+  const [editingPdv, setEditingPdv] = useState(null);
+  const [novaSenha, setNovaSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [mSenha, setMSenha] = useState('');
+  const [mSenhaC, setMSenhaC] = useState('');
+  const [mMsg, setMMsg] = useState('');
+  const [mSaving, setMSaving] = useState(false);
+
+  useEffect(() => {
+    listAll('auth:pdv:').then(list => {
+      const map = {};
+      (list||[]).forEach(a => { if(a.pdvId) map[a.pdvId] = a; });
+      setPdvAuths(map);
+    });
+  }, []);
+
+  const togglePerm = async (pvId, key) => {
+    const curr = pdvAuths[pvId] || { pdvId: pvId, permissoes: { ...DEFAULT_PERMS } };
+    const perms = { ...(curr.permissoes || DEFAULT_PERMS), [key]: !(curr.permissoes?.[key] ?? DEFAULT_PERMS[key]) };
+    const upd = { ...curr, permissoes: perms };
+    await put('auth:pdv:' + pvId, { ...upd, id: pvId, pdvId: pvId });
+    setPdvAuths(prev => ({ ...prev, [pvId]: upd }));
+  };
+
+  const saveSenha = async (pvId) => {
+    if (!novaSenha.trim()) return;
+    setSaving(true);
+    const hash = await sha256(novaSenha);
+    const curr = pdvAuths[pvId] || { permissoes: { ...DEFAULT_PERMS } };
+    const upd = { ...curr, id: pvId, pdvId: pvId, senhaHash: hash };
+    await put('auth:pdv:' + pvId, upd);
+    setPdvAuths(prev => ({ ...prev, [pvId]: upd }));
+    setEditingPdv(null); setNovaSenha(''); setSaving(false);
+  };
+
+  const saveMaster = async () => {
+    if (mSenha.length < 6) { setMMsg('Mínimo 6 caracteres.'); return; }
+    if (mSenha !== mSenhaC) { setMMsg('Senhas não coincidem.'); return; }
+    setMSaving(true);
+    const hash = await sha256(mSenha);
+    await put('auth:master', { id: 'master', senhaHash: hash });
+    setMSenha(''); setMSenhaC(''); setMMsg('✓ Senha master atualizada!');
+    setMSaving(false);
+  };
+
+  const Av = {
+    card: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, marginBottom: 14, overflow: 'hidden' },
+    hd: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${C.border}` },
+    badge: (on) => ({ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: on?'#22c55e20':'#94a3b820', color: on?'#22c55e':C.muted }),
+    perms: { display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 18px' },
+    pBtn: (on) => ({ display:'flex',alignItems:'center',gap:6, padding:'7px 12px', borderRadius:8, background: on?C.orange+'22':C.surface2, border:`1px solid ${on?C.orange:C.border}`, cursor:'pointer', fontSize:12, fontWeight:700, color:on?C.orange:C.muted, userSelect:'none' }),
+    passRow: { display: 'flex', gap: 8, padding: '0 18px 14px', alignItems: 'center' },
+    inp: { flex:1, background:C.surface2, border:`1px solid ${C.border}`, borderRadius:9, padding:'9px 12px', color:C.text, fontSize:13, outline:'none' },
+    sv: { background:C.orange, border:'none', borderRadius:9, padding:'9px 16px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', whiteSpace:'nowrap' },
+    cn: { background:C.surface2, border:`1px solid ${C.border}`, borderRadius:9, padding:'9px 12px', color:C.muted, fontWeight:600, fontSize:13, cursor:'pointer' },
+    chBtn: { background:'none', border:`1px solid ${C.border}`, borderRadius:8, padding:'5px 12px', color:C.muted, fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5 },
+  };
+
+  return (
+    <div style={{ maxWidth: 740, margin: '0 auto' }}>
+      <h2 style={{ color:C.text, fontSize:20, fontWeight:800, marginBottom:6 }}>Controle de Acessos</h2>
+      <p style={{ color:C.muted, fontSize:13, marginBottom:24 }}>Gerencie senhas e permissões de cada ponto de venda.</p>
+
+      {pdvs.map(pdv => {
+        const av = pdvAuths[pdv.id];
+        const configured = !!av?.senhaHash;
+        const perms = av?.permissoes || DEFAULT_PERMS;
+        const isEd = editingPdv === pdv.id;
+        return (
+          <div key={pdv.id} style={Av.card}>
+            <div style={Av.hd}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <Store size={15} color={C.orange}/>
+                <span style={{ fontWeight:700, fontSize:15, color:C.text }}>{pdv.nome}</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={Av.badge(configured)}>{configured?'Acesso ativo':'Sem acesso'}</span>
+                <button style={Av.chBtn} onClick={()=>{ setEditingPdv(isEd?null:pdv.id); setNovaSenha(''); }}>
+                  <Lock size={11}/>{configured?'Trocar senha':'Definir senha'}
+                </button>
+              </div>
+            </div>
+            {isEd && (
+              <div style={Av.passRow}>
+                <input style={Av.inp} type={showSenha?'text':'password'} value={novaSenha}
+                  onChange={e=>setNovaSenha(e.target.value)}
+                  placeholder="Nova senha…"
+                  onKeyDown={e=>e.key==='Enter'&&saveSenha(pdv.id)}/>
+                <button onClick={()=>setShowSenha(v=>!v)} style={{ background:'none',border:'none',cursor:'pointer',color:C.muted,padding:4,display:'flex' }}>{showSenha?<EyeOff size={14}/>:<Eye size={14}/>}</button>
+                <button onClick={()=>saveSenha(pdv.id)} style={Av.sv} disabled={saving}>{saving?'…':'Salvar'}</button>
+                <button onClick={()=>setEditingPdv(null)} style={Av.cn}>Cancelar</button>
+              </div>
+            )}
+            <div style={Av.perms}>
+              <span style={{ fontSize:11, color:C.muted, textTransform:'uppercase', letterSpacing:1, alignSelf:'center', marginRight:2 }}>Acesso:</span>
+              {Object.entries(PERM_LABELS).map(([k,lbl])=>(
+                <button key={k} style={Av.pBtn(perms[k]??DEFAULT_PERMS[k])} onClick={()=>togglePerm(pdv.id,k)}>
+                  {(perms[k]??DEFAULT_PERMS[k])?<Check size={11}/>:<X size={11}/>}{lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      <div style={{ ...Av.card, marginTop:28 }}>
+        <div style={Av.hd}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <Shield size={15} color={C.orange}/>
+            <span style={{ fontWeight:700, fontSize:15, color:C.text }}>Senha master</span>
+          </div>
+        </div>
+        <div style={{ padding:'14px 18px', display:'flex', flexDirection:'column', gap:10 }}>
+          <input style={Av.inp} type="password" value={mSenha} onChange={e=>setMSenha(e.target.value)} placeholder="Nova senha master…"/>
+          <input style={Av.inp} type="password" value={mSenhaC} onChange={e=>setMSenhaC(e.target.value)} placeholder="Confirmar nova senha…"/>
+          {mMsg && <span style={{ fontSize:13, color: mMsg.startsWith('✓')?'#22c55e':'#ff7070' }}>{mMsg}</span>}
+          <button onClick={saveMaster} style={{ ...Av.sv, alignSelf:'flex-start' }} disabled={mSaving}>{mSaving?'Salvando…':'Atualizar senha master'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [tab, setTab]         = useState("painel");
+const [auth, setAuth] = useState(() => {
+    try { const _s = sessionStorage.getItem('fp_auth'); return _s ? JSON.parse(_s) : null; }
+    catch { return null; }
+  });
+  const handleLogout = () => { sessionStorage.removeItem('fp_auth'); setAuth(null); };
+    const [tab, setTab]         = useState("painel");
   const [loading, setLoading] = useState(true);
   const [pdvs, setPdvs]       = useState([]);
   const [produtos, setProdutos] = useState([]);
@@ -202,6 +487,7 @@ export default function App() {
                                 estoqueDe={estoqueDe} onAdd={addMov} setTab={setTab} />}
         {tab === "vendas"   && <VendasView movs={movs} pdvs={pdvs}
                                 produtos={produtos} onRemove={removeMov} flash={flash} />}
+          {tab === "acessos" && auth?.tipo === "master" && <AcessosView pdvs={pdvs} />}
       </main>
 
       {toast && <Toast toast={toast} />}
@@ -269,6 +555,13 @@ function Header({ storageMode, syncing, onSync }) {
               style={{ animation: syncing ? "spin 1s linear infinite" : "none" }} />
             {syncing ? "Sincronizando…" : "Sincronizar"}
           </button>
+          <button onClick={handleLogout}
+            style={{ display: "flex", alignItems: "center", gap: 6,
+              background: "none", border: `1px solid ${C.border}`,
+              borderRadius: 9, color: C.muted, padding: "8px 12px",
+              fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
+            <LogOut size={14} color={C.muted}/> Sair
+          </button>
         </div>
       </div>
     </header>
@@ -290,16 +583,21 @@ function LocalBanner() {
   );
 }
 
-const NAV = [
-  ["painel",   "Painel",         LayoutGrid],
-  ["vender",   "Vender",         ShoppingBag],
-  ["enviar",   "Enviar",         Truck],
-  ["pdv",      "Pontos de venda",Store],
-  ["catalogo", "Catálogo",       Package],
-  ["vendas",   "Vendas / NF",    FileText],
-];
+const NAV_ALL = [
+    ["painel",   "Painel",          LayoutGrid],
+    ["vender",   "Vender",          ShoppingBag],
+    ["enviar",   "Enviar",          Truck],
+    ["pdv",      "Pontos de venda", MapPin],
+    ["catalogo", "Catálogo",        Package],
+    ["vendas",   "Vendas / NF",     FileText],
+    ["acessos",  "Acessos",         Shield],
+  ];
+  const NAV = auth?.tipo === 'master'
+    ? NAV_ALL
+    : NAV_ALL.filter(([id]) => id !== 'pdv' && id !== 'acessos' && (auth?.permissoes?.[id] !== false));
 
 function Nav({ tab, setTab }) {
+  if (!auth) return <LoginScreen onLogin={a => { setAuth(a); setTab((NAV_ALL.find(([id]) => id !== 'acessos' && a.tipo==='master' || a.permissoes?.[id] !== false))?.[0] || 'painel'); }} />;
   return (
     <nav style={{ borderBottom: `1px solid ${C.border}`, background: C.surface,
       position: "sticky", top: 57, zIndex: 25, overflowX: "auto" }} className="no-sb">
