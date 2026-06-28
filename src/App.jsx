@@ -1471,7 +1471,7 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
   const toggleCart = id => setCart(c => c.includes(id) ? c.filter(x => x !== id) : [...c, id]);
   const [data,      setData]  = useState(today());
   const [cli,       setCli]   = useState(
-    { nome: "", cpf: "", email: "", telefone: "", rua: "", numero: "", bairro: "", cidade: "", estado: "", cep: "" }
+    { nome: "", cpf: "", email: "", telefone: "", rua: "", complemento: "", numero: "", bairro: "", cidade: "", estado: "", cep: "" }
   );
 
   const disponiveis = pdvId ? estoqueDe(pdvId) : [];
@@ -1606,6 +1606,7 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
                   onChange={(e) => setCli({ ...cli, rua: e.target.value })}
                   placeholder="Ex: Alameda Joaquim Eugênio de Lima" />
               </Field>
+              <Field label="Complemento"><Input value={cli.complemento} onChange={(e) => setCli({ ...cli, complemento: e.target.value })} placeholder="Apto, Bloco, Casa..." /></Field>
               <div style={{ display: "flex", gap: 10 }}>
                 <div style={{ flex: "0 0 100px" }}>
                   <Field label="Número *">
