@@ -1467,18 +1467,23 @@ function EnviarView({ pdvs, produtos, onAdd, setTab }) {
 function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
   const [step,      setStep]  = useState(1);
   const [pdvId,     setPdvId] = useState("");
-  const [produtoId, setProd]  = useState("");
+  const [cart, setCart] = useState([]);
+  const toggleCart = id => setCart(c => c.includes(id) ? c.filter(x => x !== id) : [...c, id]);
   const [data,      setData]  = useState(today());
   const [cli,       setCli]   = useState(
     { nome: "", cpf: "", email: "", telefone: "", rua: "", numero: "", bairro: "", cidade: "", estado: "", cep: "" }
   );
 
   const disponiveis = pdvId ? estoqueDe(pdvId) : [];
-  const prod = produtos.find((p) => p.id === produtoId);
+  const prod = cart.length === 1 ? produtos.find(p => p.id === cart[0]) : null;
+  const cartTotal = cart.reduce((sum, pid) => {
+    const p = produtos.find(x => x.id === pid);
+    return sum + (p?.preco || 0);
+  }, 0);
   const cliValido = cli.nome.trim() && cli.cpf.trim() && cli.rua.trim() && cli.numero.trim() && cli.bairro.trim() && cli.cidade.trim() && cli.estado.trim() && cli.cep.trim();
 
   const reset = () => {
-    setStep(1); setProd(""); setData(today());
+    setStep(1); setCart([]); setData(today());
     setCli({ nome: "", cpf: "", email: "", telefone: "", endereco: "" });
   };
 
@@ -1503,7 +1508,7 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
           <>
             <Field label="Em qual loja?" req>
               <Sel value={pdvId}
-                onChange={(e) => { setPdvId(e.target.value); setProd(""); }}>
+                onChange={(e) => { setPdvId(e.target.value); setCart([]); }}>
                 <option value="">Selecione…</option>
                 {pdvs.map((p) =>
                   <option key={p.id} value={p.id}>{p.nome} — {p.local}</option>)}
@@ -1522,9 +1527,9 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
                   ) : (
                     <div style={{ display: "grid", gap: 8 }}>
                       {disponiveis.map(({ produto, qtd }) => {
-                        const sel = produtoId === produto.id;
+                        const sel = cart.includes(produto.id);
                         return (
-                          <button key={produto.id} onClick={() => setProd(produto.id)}
+                          <button key={produto.id} onClick={() => toggleCart(produto.id)}
                             style={{ textAlign: "left", padding: "12px 14px",
                               borderRadius: 10,
                               border: `1.5px solid ${sel ? C.orange : C.border}`,
@@ -1556,7 +1561,7 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
               <Input type="date" value={data}
                 onChange={(e) => setData(e.target.value)} />
             </Field>
-            <Btn full disabled={!pdvId || !produtoId} onClick={() => setStep(2)}>
+            <Btn full disabled={!pdvId || cart.length === 0} onClick={() => setStep(2)}>
               Continuar
             </Btn>
           </>
@@ -1567,9 +1572,9 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
             <div style={{ background: C.bg, border: `1px solid ${C.border}`,
               borderRadius: 10, padding: "10px 14px", marginBottom: 16,
               display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 13.5, color: C.muted }}>{prod?.nome}</span>
+              <span style={{ fontSize: 13.5, color: C.muted }}>{prod?.nome || (cart.length > 1 ? cart.length + " produtos" : "—")}</span>
               
-              <span style={{ fontWeight: 700, color: C.orange }}>{brl(prod?.preco)}</span>
+              <span style={{ fontWeight: 700, color: C.orange }}>{brl(cartTotal)}</span>
             </div>
 
             <Field label="Nome completo do cliente" req>
@@ -1646,10 +1651,14 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
               <div style={{ flex: 1 }}>
                 <Btn full disabled={!cliValido}
                   onClick={async () => {
+                    for (const _pid of cart) {
+                    const _p = produtos.find(x => x.id === _pid);
                     await onAdd({
-                      tipo: "venda", pdvId, produtoId, qtd: 1,
-                      data, preco: prod?.preco || 0, cliente: cli,
+                      tipo: "venda", pdvId, produtoId: _pid, qtd: 1,
+                      data, preco: _p?.preco,
+                      cliente: cli,
                     });
+                  }
                     reset();
                   }}>
                   <Check size={16} />Confirmar venda
