@@ -460,6 +460,17 @@ const [auth, setAuth] = useState(() => {
 
   if (loading) return <Splash />;
 
+  if (!auth) return (
+    <LoginScreen onLogin={newA => {
+      setAuth(newA);
+      setTab(
+        (NAV_ALL.find(([id]) =>
+          id !== 'acessos' &&
+          (newA.tipo === 'master' || newA.permissoes?.[id] !== false)
+        ) || NAV_ALL[0])?.[0] || 'painel'
+      );
+    }} />
+  );
   const empty = !pdvs.length && !produtos.length && !movs.length;
 
   return (
@@ -468,7 +479,7 @@ const [auth, setAuth] = useState(() => {
       <style>{globalCss}</style>
 
       <Header storageMode={storageMode} syncing={syncing} onSync={sync} />
-      <Nav tab={tab} setTab={setTab} />
+      <Nav tab={tab} setTab={setTab} auth={auth} />
 
       {storageMode === "local" && <LocalBanner />}
 
@@ -592,11 +603,10 @@ const NAV_ALL = [
     ["vendas",   "Vendas / NF",     FileText],
     ["acessos",  "Acessos",         Shield],
   ];
+  function Nav({ tab, setTab, auth }) {
   const NAV = auth?.tipo === 'master'
     ? NAV_ALL
     : NAV_ALL.filter(([id]) => id !== 'pdv' && id !== 'acessos' && (auth?.permissoes?.[id] !== false));
-
-function Nav({ tab, setTab }) {
   return (
     <nav style={{ borderBottom: `1px solid ${C.border}`, background: C.surface,
       position: "sticky", top: 57, zIndex: 25, overflowX: "auto" }} className="no-sb">
@@ -1666,17 +1676,7 @@ function Steps({ step }) {
       {items.map(([n, label]) => {
         const active = String(step) === n;
         const done   = step > Number(n);
-  if (!auth) return (
-    <LoginScreen onLogin={newA => {
-      setAuth(newA);
-      setTab(
-        (NAV_ALL.find(([id]) =>
-          id !== 'acessos' &&
-          (newA.tipo === 'master' || newA.permissoes?.[id] !== false)
-        ) || NAV_ALL[0])?.[0] || 'painel'
-      );
-    }} />
-  );
+  
         return (
           <div key={n} style={{ flex: 1, display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 26, height: 26, borderRadius: 99,
