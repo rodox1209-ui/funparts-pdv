@@ -597,7 +597,6 @@ const NAV_ALL = [
     : NAV_ALL.filter(([id]) => id !== 'pdv' && id !== 'acessos' && (auth?.permissoes?.[id] !== false));
 
 function Nav({ tab, setTab }) {
-  if (!auth) return <LoginScreen onLogin={a => { setAuth(a); setTab((NAV_ALL.find(([id]) => id !== 'acessos' && a.tipo==='master' || a.permissoes?.[id] !== false))?.[0] || 'painel'); }} />;
   return (
     <nav style={{ borderBottom: `1px solid ${C.border}`, background: C.surface,
       position: "sticky", top: 57, zIndex: 25, overflowX: "auto" }} className="no-sb">
@@ -1667,6 +1666,17 @@ function Steps({ step }) {
       {items.map(([n, label]) => {
         const active = String(step) === n;
         const done   = step > Number(n);
+  if (!auth) return (
+    <LoginScreen onLogin={newA => {
+      setAuth(newA);
+      setTab(
+        (NAV_ALL.find(([id]) =>
+          id !== 'acessos' &&
+          (newA.tipo === 'master' || newA.permissoes?.[id] !== false)
+        ) || NAV_ALL[0])?.[0] || 'painel'
+      );
+    }} />
+  );
         return (
           <div key={n} style={{ flex: 1, display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 26, height: 26, borderRadius: 99,
