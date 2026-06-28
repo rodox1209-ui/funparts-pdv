@@ -478,7 +478,7 @@ const [auth, setAuth] = useState(() => {
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
       <style>{globalCss}</style>
 
-      <Header storageMode={storageMode} syncing={syncing} onSync={sync} />
+      <Header storageMode={storageMode} syncing={syncing} onSync={sync} onLogout={handleLogout} />
       <Nav tab={tab} setTab={setTab} auth={auth} />
 
       {storageMode === "local" && <LocalBanner />}
@@ -531,7 +531,7 @@ function Wordmark() {
   );
 }
 
-function Header({ storageMode, syncing, onSync }) {
+function Header({ storageMode, syncing, onSync, onLogout }) {
   const connected = storageMode === "firebase";
   return (
     <header style={{ borderBottom: `1px solid ${C.border}`, background: C.bg,
@@ -566,7 +566,7 @@ function Header({ storageMode, syncing, onSync }) {
               style={{ animation: syncing ? "spin 1s linear infinite" : "none" }} />
             {syncing ? "Sincronizando…" : "Sincronizar"}
           </button>
-          <button onClick={handleLogout}
+          <button onClick={onLogout}
             style={{ display: "flex", alignItems: "center", gap: 6,
               background: "none", border: `1px solid ${C.border}`,
               borderRadius: 9, color: C.muted, padding: "8px 12px",
