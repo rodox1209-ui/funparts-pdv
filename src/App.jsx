@@ -86,7 +86,7 @@ function Footer() {
   return (
     <footer style={{ borderTop: `1px solid ${C.border}`, background: C.bg, padding: '28px 24px 20px' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 24 }}>
-        <img src="/funparts-logo.webp" alt="Funparts" style={{ height: 52, objectFit: 'contain' }} />
+        <img src="/funparts-logo.png" alt="Funparts" style={{ height: 52, objectFit: 'contain' }} />
         <div style={{ flex: 1, minWidth: 220 }}>
           <p style={{ fontWeight: 700, color: C.text, fontSize: 13, marginBottom: 4 }}>FUNPARTS LTDA</p>
           <p style={{ color: C.muted, fontSize: 11, lineHeight: 1.75, margin: 0 }}>
@@ -177,7 +177,7 @@ function LoginScreen({ onLogin }) {
 
   if (firstSetup) return (
     <div style={Sc.screen}><div style={Sc.box}>
-      <div style={Sc.logoRow}><img src="/funparts-logo.webp" alt="Funparts" style={{ height: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}/></div>
+      <div style={Sc.logoRow}><img src="/funparts-logo.png" alt="Funparts" style={{ height: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}/></div>
       <p style={{ ...Sc.sub, color: C.orange }}>Configuração inicial</p>
       <p style={{ fontSize: 13, color: C.muted, textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
         Defina a senha master para começar a usar o sistema.
@@ -200,7 +200,7 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={Sc.screen}><div style={Sc.box}>
-      <div style={Sc.logoRow}><img src="/funparts-logo.webp" alt="Funparts" style={{ height: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}/></div>
+      <div style={Sc.logoRow}><img src="/funparts-logo.png" alt="Funparts" style={{ height: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}/></div>
       <p style={Sc.sub}>Controle de Consignação</p>
       <div style={Sc.tabs}>
         <button style={Sc.tab(tipo==='pdv')} onClick={()=>{setTipo('pdv');setErro('');}}>Ponto de Venda</button>
