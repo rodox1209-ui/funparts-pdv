@@ -1546,7 +1546,7 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
                               justifyContent: "space-between", alignItems: "center" }}>
                             <div>
                               <div style={{ fontWeight: 600, color: C.text, fontSize: 14.5 }}>
-                                {produto.nome}
+                                {catTag(produto)}{produto.nome}
                               </div>
                               <div style={{ color: C.muted, fontSize: 12.5 }}>
                                 {brl(produto.preco)}
