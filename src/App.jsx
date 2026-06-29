@@ -495,7 +495,7 @@ const [auth, setAuth] = useState(() => {
         {tab === "enviar"   && <EnviarView pdvs={pdvs} produtos={produtos} movs={movs}
                                 onAdd={addMov} setTab={setTab} />}
         {tab === "vender"   && <VenderView pdvs={pdvs} produtos={produtos}
-                                estoqueDe={estoqueDe} onAdd={addMov} setTab={setTab} />}
+                                estoqueDe={estoqueDe} onAdd={addMov} setTab={setTab} auth={auth} />}
         {tab === "vendas"   && <VendasView movs={movs} pdvs={pdvs}
                                 produtos={produtos} onRemove={removeMov} flash={flash} />}
           {tab === "acessos" && auth?.tipo === "master" && <AcessosView pdvs={pdvs} />}
@@ -1472,9 +1472,9 @@ function EnviarView({ pdvs, produtos, movs, onAdd, setTab }) {
 // ============================================================
 //  VENDER
 // ============================================================
-function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
+function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab, auth }) {
   const [step,      setStep]  = useState(1);
-  const [pdvId,     setPdvId] = useState("");
+  const [pdvId,     setPdvId] = useState(auth?.tipo === 'pdv' ? (auth?.pdvId || '') : '');
   const [cart, setCart] = useState([]);
   const toggleCart = id => setCart(c => c.includes(id) ? c.filter(x => x !== id) : [...c, id]);
   const [data,      setData]  = useState(today());
@@ -1514,14 +1514,14 @@ function VenderView({ pdvs, produtos, estoqueDe, onAdd, setTab }) {
 
         {step === 1 && (
           <>
-            <Field label="Em qual loja?" req>
+            {auth?.tipo !== 'pdv' && (<Field label="Em qual loja?" req>
               <Sel value={pdvId}
                 onChange={(e) => { setPdvId(e.target.value); setCart([]); }}>
                 <option value="">Selecione…</option>
                 {pdvs.map((p) =>
                   <option key={p.id} value={p.id}>{p.nome} — {p.local}</option>)}
               </Sel>
-            </Field>
+            </Field>)}
 
             {pdvId && (
               <Field label="Qual quadro foi vendido?" req>
