@@ -82,6 +82,26 @@ const DEFAULT_PERMS = { painel:true, vender:true, enviar:true, pdv:false, catalo
 // ────────────────────────────────────────────────────────────────────────────────
 // LOGIN SCREEN
 // ────────────────────────────────────────────────────────────────────────────────
+function Footer() {
+  return (
+    <footer style={{ borderTop: `1px solid ${C.border}`, background: C.bg, padding: '28px 24px 20px' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 24 }}>
+        <img src="/funparts-logo.webp" alt="Funparts" style={{ height: 52, objectFit: 'contain' }} />
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <p style={{ fontWeight: 700, color: C.text, fontSize: 13, marginBottom: 4 }}>FUNPARTS LTDA</p>
+          <p style={{ color: C.muted, fontSize: 11, lineHeight: 1.75, margin: 0 }}>
+            CNPJ: 09.579.820/0001-54 &nbsp;·&nbsp; Av. Real 97, Sala 01 e 02 – Aldeia da Serra – Barueri – SP 06429-200<br/>
+            (11) 91064-6157 &nbsp;·&nbsp; <a href="mailto:contato@funparts.com.br" style={{ color: C.orange, textDecoration: 'none' }}>contato@funparts.com.br</a>
+          </p>
+        </div>
+        <div style={{ fontSize: 11, textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <a href="https://www.funparts.com.br" target="_blank" rel="noopener noreferrer" style={{ color: C.orange, textDecoration: 'none' }}>www.funparts.com.br</a>
+          <a href="https://www.instagram.com/funparts" target="_blank" rel="noopener noreferrer" style={{ color: C.muted, textDecoration: 'none' }}>@funparts</a>
+        </div>
+      </div>
+    </footer>
+  );
+}
 function LoginScreen({ onLogin }) {
   const [tipo, setTipo] = useState('pdv');
   const [pdvId, setPdvId] = useState('');
@@ -157,7 +177,7 @@ function LoginScreen({ onLogin }) {
 
   if (firstSetup) return (
     <div style={Sc.screen}><div style={Sc.box}>
-      <div style={Sc.logoRow}><div style={Sc.bar}/><span style={Sc.logoTxt}>FUNPARTS</span></div>
+      <div style={Sc.logoRow}><img src="/funparts-logo.webp" alt="Funparts" style={{ height: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}/></div>
       <p style={{ ...Sc.sub, color: C.orange }}>Configuração inicial</p>
       <p style={{ fontSize: 13, color: C.muted, textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
         Defina a senha master para começar a usar o sistema.
@@ -180,7 +200,7 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={Sc.screen}><div style={Sc.box}>
-      <div style={Sc.logoRow}><div style={Sc.bar}/><span style={Sc.logoTxt}>FUNPARTS</span></div>
+      <div style={Sc.logoRow}><img src="/funparts-logo.webp" alt="Funparts" style={{ height: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}/></div>
       <p style={Sc.sub}>Controle de Consignação</p>
       <div style={Sc.tabs}>
         <button style={Sc.tab(tipo==='pdv')} onClick={()=>{setTipo('pdv');setErro('');}}>Ponto de Venda</button>
@@ -500,6 +520,7 @@ const [auth, setAuth] = useState(() => {
                                 produtos={produtos} onRemove={removeMov} flash={flash} />}
           {tab === "acessos" && auth?.tipo === "master" && <AcessosView pdvs={pdvs} />}
       </main>
+      <Footer />
 
       {toast && <Toast toast={toast} />}
     </div>
