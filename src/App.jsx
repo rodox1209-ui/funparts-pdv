@@ -487,7 +487,7 @@ const [auth, setAuth] = useState(() => {
         {empty && tab === "painel" && <FirstRun onSeed={seed} setTab={setTab} />}
 
         {tab === "painel"   && <Painel pdvs={pdvs} produtos={produtos} movs={movs}
-                                estoqueDe={estoqueDe} setTab={setTab} />}
+                                estoqueDe={estoqueDe} setTab={setTab} auth={auth} />}
         {tab === "pdv"      && <PdvView pdvs={pdvs} onSave={savePdv}
                                 onRemove={removePdv} estoqueDe={estoqueDe} onAddMov={addMov} />}
         {tab === "catalogo" && <CatalogoView produtos={produtos}
@@ -554,7 +554,7 @@ function Header({ storageMode, syncing, onSync, onLogout }) {
               {connected
                 ? <Wifi size={13} color={C.green} />
                 : <WifiOff size={13} color={C.muted} />}
-              {connected ? "Firebase ativo" : "Modo local"}
+              
             </div>
           )}
           <button onClick={onSync}
@@ -564,14 +564,14 @@ function Header({ storageMode, syncing, onSync, onLogout }) {
               fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
             <RefreshCw size={14} color={C.blue}
               style={{ animation: syncing ? "spin 1s linear infinite" : "none" }} />
-            {syncing ? "Sincronizando…" : "Sincronizar"}
+            
           </button>
           <button onClick={onLogout}
             style={{ display: "flex", alignItems: "center", gap: 6,
               background: "none", border: `1px solid ${C.border}`,
               borderRadius: 9, color: C.muted, padding: "8px 12px",
               fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
-            <LogOut size={14} color={C.muted}/> Sair
+            <LogOut size={14} color={C.muted}/>
           </button>
         </div>
       </div>
@@ -807,8 +807,9 @@ function FirstRun({ onSeed, setTab }) {
 // ============================================================
 //  PAINEL
 // ============================================================
-function Painel({ pdvs, produtos, movs, estoqueDe, setTab }) {
-  const vendas    = movs.filter((m) => m.tipo === "venda");
+function Painel({ pdvs, produtos, movs, estoqueDe, setTab, auth }) {
+  const meuPdvId = auth?.tipo === 'pdv' ? auth.pdvId : null;
+  const vendas    = movs.filter((m) => m.tipo === "venda" && (!meuPdvId || m.pdvId === meuPdvId));
   const mesAtual  = today().slice(0, 7);
   const vendasMes = vendas.filter((v) => (v.data || "").slice(0, 7) === mesAtual);
   const valorMes  = vendasMes.reduce((s, v) =>
@@ -816,7 +817,7 @@ function Painel({ pdvs, produtos, movs, estoqueDe, setTab }) {
   const unidMes   = vendasMes.reduce((s, v) => s + (Number(v.qtd) || 1), 0);
 
   let unidEstoque = 0, valorEstoque = 0;
-  const porPdv = pdvs.map((p) => {
+  const porPdv = (meuPdvId ? pdvs.filter(p => p.id === meuPdvId) : pdvs).map((p) => {
     const linhas = estoqueDe(p.id);
     const u   = linhas.reduce((s, l) => s + l.qtd, 0);
     const val = linhas.reduce((s, l) => s + l.qtd * (Number(l.produto.preco) || 0), 0);
@@ -963,7 +964,7 @@ function Painel({ pdvs, produtos, movs, estoqueDe, setTab }) {
           foot={`${unidEstoque} quadros na rua`} accent={C.blue} />
         <Stat label="Vendas no mês" value={brl(valorMes)}
           foot={`${unidMes} vendidos`} accent={C.orange} />
-        <Stat label="Pontos de venda" value={pdvs.length}
+        <Stat label="Pontos de venda" value={meuPdvId ? 1 : pdvs.length}
           foot="ativos" accent={C.blueSoft} />
         <Stat label="Catálogo" value={produtos.length}
           foot="quadros cadastrados" accent={C.muted} />
