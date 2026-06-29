@@ -594,6 +594,9 @@ function LocalBanner() {
   );
 }
 
+const _CAT_TAG = { quadros: "[Q]", miniaturas: "[M]", capacetes: "[C]" };
+const catTag = p => _CAT_TAG[p?.categoria] ? _CAT_TAG[p?.categoria] + " " : "";
+
 const NAV_ALL = [
     ["painel",   "Painel",          LayoutGrid],
     ["vender",   "Vender",          ShoppingBag],
@@ -907,7 +910,7 @@ function Painel({ pdvs, produtos, movs, estoqueDe, setTab }) {
                   <div style={{ display: "flex", justifyContent: "space-between",
                     alignItems: "baseline", marginBottom: 10 }}>
                     <div>
-                      <span style={{ fontWeight: 700, fontSize: 15 }}>{produto.nome}</span>
+                      <span style={{ fontWeight: 700, fontSize: 15 }}>{catTag(produto)}{produto.nome}</span>
                       {produto.modelo && (
                         <span style={{ color: C.muted, fontSize: 12.5,
                           marginLeft: 8 }}>{produto.modelo}</span>
@@ -1179,7 +1182,7 @@ function PdvDetalhe({ pdv, pdvs, estoqueDe, onAddMov, onClose }) {
               <div style={{ display: "flex", justifyContent: "space-between",
                 alignItems: "center", padding: "11px 0" }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{produto.nome}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{catTag(produto)}{produto.nome}</div>
                   <div style={{ color: C.muted, fontSize: 12.5 }}>{brl(produto.preco)} cada</div>
                 </div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -1437,7 +1440,7 @@ function EnviarView({ pdvs, produtos, movs, onAdd, setTab }) {
           <Sel value={produtoId} onChange={(e) => setProdutoId(e.target.value)}>
             <option value="">Selecione…</option>
             {produtosDisp.map((p) =>
-              <option key={p.id} value={p.id}>{p.nome} ({brl(p.preco)})</option>)}
+              <option key={p.id} value={p.id}>{catTag(p)}{p.nome} ({brl(p.preco)})</option>)}
           </Sel>
         </Field>
         <div style={{ display: "flex", gap: 12 }}>
