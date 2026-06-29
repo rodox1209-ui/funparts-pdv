@@ -94,7 +94,7 @@ function LoginScreen({ onLogin }) {
   const [senhaConf, setSenhaConf] = useState('');
 
   useEffect(() => {
-    Promise.all([listAll('pdv:'), listAll('auth:master')]).then(([pvs, ms]) => {
+    Promise.all([listAll(PFX.pdv), listAll('auth:master')]).then(([pvs, ms]) => {
       setPdvList(pvs || []);
       if (!ms || ms.length === 0) setFirstSetup(true);
     });
